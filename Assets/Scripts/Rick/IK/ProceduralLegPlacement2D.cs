@@ -17,7 +17,11 @@ public class ProceduralLegPlacement2D : MonoBehaviour
 
     // ── Stepping ──────────────────────────────────────────────────────────
     [Header("Stepping")]
-    [Tooltip("How far the nearest surface contact must drift before a new step fires.")]
+    [Tooltip("When true the leg steps automatically based on stepTriggerDistance. " +
+             "Disable to let PlayerController2D drive the step order manually via Step().")]
+    public bool autoStep = true;
+
+    [Tooltip("How far the nearest surface contact must drift before a new step fires. Only used when autoStep is true.")]
     public float stepTriggerDistance = 0.15f;
 
     [Tooltip("Minimum seconds between steps.")]
@@ -32,7 +36,9 @@ public class ProceduralLegPlacement2D : MonoBehaviour
     public float stepHeightMultiplier = 0.2f;
 
     // ── Public state ──────────────────────────────────────────────────────
-    public bool legGrounded { get; private set; }
+    public bool    legGrounded  { get; private set; }
+    /// <summary>The last confirmed ground contact point (where the foot is stepping toward).</summary>
+    public Vector2 GroundContact => _stepTarget;
 
     // ── Runtime ───────────────────────────────────────────────────────────
     private Vector2 _stepFrom;
@@ -83,8 +89,9 @@ public class ProceduralLegPlacement2D : MonoBehaviour
         bool hit = FindBestHit(out Vector2 bestHit, out Vector2 bestNormal);
         legGrounded = hit;
 
-        // Auto-step: fire when the nearest surface drifts past the trigger threshold
-        if (hit
+        // Auto-step: only when enabled — disable to let an external controller sequence the steps
+        if (autoStep
+            && hit
             && Time.time >= _lastStepTime + stepCooldown
             && Vector2.Distance(bestHit, _stepTarget) > stepTriggerDistance)
         {

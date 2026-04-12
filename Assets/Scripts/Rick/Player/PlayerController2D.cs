@@ -8,7 +8,29 @@ public class PlayerController2D : MonoBehaviour
     public float moveForce    = 12f;
     public float maxSpeed     = 8f;
     public float brakeDamping = 0.12f;
+    // -- Jumpint 
+    public float jumpForce = 16f;
+    // ── Leg Root by Contact ───────────────────────────────────────────────
+    [Header("Leg Root by Contact")]
+    [Tooltip("Central pivot. Roots are placed opposite the contact point, at legRootOffset from this.")]
+    public Transform BodyPartToFollow;
+    public Transform LeftLegRoot;
+    [Tooltip("The leg limb whose ground contact drives the left root position.")]
+    public ProceduralLegPlacement2D LeftLegLimb;
+    public Transform RightLegRoot;
+    [Tooltip("The leg limb whose ground contact drives the right root position.")]
+    public ProceduralLegPlacement2D RightLegLimb;
+    [Tooltip("Distance from the pivot to the root (world units). Root sits opposite the contact point at this distance.")]
+    public float legRootOffset = 0.3f;
 
+    // ── Arm Root by Contact ───────────────────────────────────────────────
+    [Header("Arm Root by Contact")]
+    public Transform TorsoPartToFollow;
+    public Transform LeftArmRoot;
+    public ProceduralLegPlacement2D LeftArmLimb;
+    public Transform RightArmRoot;
+    public ProceduralLegPlacement2D RightArmLimb;
+    public float armRootOffset = 0.3f;
     // ── Gravity ───────────────────────────────────────────────────────────
     [Header("Gravity")]
     public float gravityGrounded = 0f;
@@ -45,6 +67,7 @@ public class PlayerController2D : MonoBehaviour
     [SerializeField] private InputReader _input;
 
     private bool  _isGrounded;
+    private bool  _jumpConsumed;
     private Vector2 _lastPosition;
     private float   _distanceTraveled;
     private int     _stepIndex;
@@ -81,23 +104,40 @@ public class PlayerController2D : MonoBehaviour
 
     private void Update() {
         Vector2 input = _input != null ? _input.MoveInput : Vector2.zero;
+        if (_input != null && _input.JumpHeld && !_jumpConsumed) Jump();
+        if (_input != null && !_input.JumpHeld) _jumpConsumed = false;
         SetOrientation(input);
         SetHeadRotation(input);
+        MoveByRotation();
+        MoveArmsByRotation();
         TickStepSound();
     }
 
     // ── Movement ──────────────────────────────────────────────────────────
 
     private void ApplyMovement(Vector2 input) {
-        _rb.AddForce((Vector2)transform.right * input.x * moveForce);
-        _rb.AddForce(Vector2.up               * input.y * moveForce);
+        
+        _rb.AddForce((Vector2)transform.right * input.x * moveForce, ForceMode2D.Force);
+        if (!_isGrounded) return;
+        _rb.AddForce(Vector2.up               * input.y * moveForce, ForceMode2D.Force);
     }
 
     private void ApplyBraking() {
-        _rb.linearVelocity  = Vector2.Lerp(_rb.linearVelocity, Vector2.zero, brakeDamping);
-        _rb.angularVelocity = Mathf.Lerp(_rb.angularVelocity,  0f,           brakeDamping);
+        if (_isGrounded) {
+            // On the ground: damp all velocity
+            _rb.linearVelocity = Vector2.Lerp(_rb.linearVelocity, Vector2.zero, brakeDamping);
+        } else {
+            // Airborne: only damp horizontal so the jump impulse travels freely
+            float dampedX = Mathf.Lerp(_rb.linearVelocity.x, 0f, brakeDamping);
+            _rb.linearVelocity = new Vector2(dampedX, _rb.linearVelocity.y);
+        }
+        _rb.angularVelocity = Mathf.Lerp(_rb.angularVelocity, 0f, brakeDamping);
     }
-
+    private void Jump() {
+        if (!_isGrounded) return;
+        _rb.AddForce((Vector2)transform.up * jumpForce, ForceMode2D.Impulse);
+        _jumpConsumed = true;
+    }
     private void ClampSpeeds() {
         if (_rb.linearVelocity.magnitude > maxSpeed)
             _rb.linearVelocity = _rb.linearVelocity.normalized * maxSpeed;
@@ -107,7 +147,6 @@ public class PlayerController2D : MonoBehaviour
 
     private void UpdateGravity() {
         _isGrounded = false;
-
         foreach (var dir in _rayDirs) {
             if (Physics2D.Raycast(transform.position, dir, groundCheckDistance, solidLayer)) {
                 _isGrounded = true;
@@ -126,13 +165,19 @@ public class PlayerController2D : MonoBehaviour
         else if (input.x >  0.05f) Head.localScale = new Vector3(-1f, 1f, 1f);
     }
 
-    private void SetHeadRotation(Vector2 input) 
+    private void SetHeadRotation(Vector2 input)
     {
         if (Head == null) return;
-        float targetAngle = -input.y * maxHeadTilt;
-        float currentAngle = Head.localEulerAngles.z;
-        if (currentAngle > 179f) currentAngle -= 359f; // Convert
-        float newAngle = Mathf.Lerp(currentAngle, targetAngle, Time.deltaTime * headTiltSpeed);
+
+        // Mirror the tilt when the sprite is flipped so the head always tilts
+        // toward the movement direction regardless of which way it faces.
+        // scale.x =  1 → facing left  (natural)  → positive Z = CCW = looking up ✓
+        // scale.x = -1 → facing right (flipped)   → need opposite sign to look up ✓
+        float scaleSign   = Mathf.Sign(Head.localScale.x);
+        float targetAngle = -input.y * maxHeadTilt * scaleSign;
+
+        // LerpAngle handles the 0↔360 wrap correctly without manual conversion
+        float newAngle = Mathf.LerpAngle(Head.localEulerAngles.z, targetAngle, Time.deltaTime * headTiltSpeed);
         Head.localRotation = Quaternion.Euler(0f, 0f, newAngle);
     }
 
@@ -176,6 +221,41 @@ public class PlayerController2D : MonoBehaviour
         if (stepAudio != null) { _pendingSound = true; _soundTimer = 0f; }
 
         _stepIndex = (_stepIndex + 1) % limbs.Length;
+    }
+    [Header("Root Smoothing")]
+    [Tooltip("How fast the roots lerp toward their target world position.")]
+    public float rootLerpSpeed = 8f;
+
+    // Places 'root' at (pivot - direction_to_contact * offset), smoothly.
+    // The root ends up on the OPPOSITE side of the pivot from the contact point,
+    // giving the IK chain the full arc length it needs without being forced.
+    private void MoveRootByContact(
+        Transform pivot, Transform root,
+        ProceduralLegPlacement2D limb, float offset)
+    {
+        if (pivot == null || root == null || limb == null) return;
+
+        Vector2 pivotPos  = pivot.position;
+        Vector2 contact   = limb.GroundContact;
+        Vector2 toContact = contact - pivotPos;
+
+        if (toContact.sqrMagnitude < 0.001f) return;
+
+        // Opposite side of pivot from the contact point, at 'offset' distance
+        Vector2 worldTarget = pivotPos - toContact.normalized * offset;
+        root.position = Vector2.Lerp(root.position, worldTarget, Time.deltaTime * rootLerpSpeed);
+    }
+
+    public void MoveByRotation()
+    {
+        MoveRootByContact(BodyPartToFollow, LeftLegRoot,  LeftLegLimb,  legRootOffset);
+        MoveRootByContact(BodyPartToFollow, RightLegRoot, RightLegLimb, legRootOffset);
+    }
+
+    public void MoveArmsByRotation()
+    {
+        MoveRootByContact(TorsoPartToFollow, LeftArmRoot,  LeftArmLimb,  armRootOffset);
+        MoveRootByContact(TorsoPartToFollow, RightArmRoot, RightArmLimb, armRootOffset);
     }
 
     // ── Step Sound ────────────────────────────────────────────────────────
