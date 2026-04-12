@@ -226,9 +226,9 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0.5
-  m_AngularDamping: 0.5
+  m_Mass: 2
+  m_LinearDamping: 3
+  m_AngularDamping: 3
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -711,8 +711,8 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 0.5
-  m_AngularDamping: 0.5
+  m_LinearDamping: 3
+  m_AngularDamping: 3
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -1498,8 +1498,8 @@ MonoBehaviour:
   rayLength: 0.3
   autoStep: 0
   stepTriggerDistance: 0.1
-  stepCooldown: 0.4
-  stepDuration: 0.3
+  stepCooldown: 0.2
+  stepDuration: 0.15
   stepHeightCurve:
     serializedVersion: 2
     m_Curve:
@@ -1524,7 +1524,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  stepHeightMultiplier: 0.15
+  stepHeightMultiplier: 0.12
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1959,9 +1959,9 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0.5
-  m_AngularDamping: 0.5
+  m_Mass: 3
+  m_LinearDamping: 3
+  m_AngularDamping: 3
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -2432,10 +2432,10 @@ HingeJoint2D:
   m_Motor:
     m_MotorSpeed: 0
     m_MaximumMotorForce: 10000
-  m_UseLimits: 0
+  m_UseLimits: 1
   m_AngleLimits:
-    m_LowerAngle: -90
-    m_UpperAngle: 90
+    m_LowerAngle: -180
+    m_UpperAngle: 180
 --- !u!50 &1214631407
 Rigidbody2D:
   serializedVersion: 5
@@ -2448,9 +2448,9 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 3
-  m_LinearDamping: 1
-  m_AngularDamping: 1
+  m_Mass: 1
+  m_LinearDamping: 3
+  m_AngularDamping: 3
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -2552,8 +2552,8 @@ MonoBehaviour:
   rayLength: 0.3
   autoStep: 0
   stepTriggerDistance: 0.1
-  stepCooldown: 0.4
-  stepDuration: 0.3
+  stepCooldown: 0.2
+  stepDuration: 0.15
   stepHeightCurve:
     serializedVersion: 2
     m_Curve:
@@ -2578,7 +2578,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  stepHeightMultiplier: 0.15
+  stepHeightMultiplier: 0.12
 --- !u!1 &1248168024
 GameObject:
   m_ObjectHideFlags: 0
@@ -2606,7 +2606,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: -0.06000001, y: -0.079, z: 0}
-  m_LocalScale: {x: 1, y: 1.2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1489509896}
@@ -2698,7 +2698,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: -0.21643952, w: 0.97629607}
   m_LocalPosition: {x: -0.042, y: -0.08299999, z: 0}
-  m_LocalScale: {x: 1, y: 1.2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1766654254}
@@ -2963,9 +2963,9 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0.5
-  m_AngularDamping: 0.5
+  m_Mass: 2
+  m_LinearDamping: 3
+  m_AngularDamping: 3
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -3159,7 +3159,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.2164396, w: 0.97629607}
   m_LocalPosition: {x: 0.011, y: -0.084, z: 0}
-  m_LocalScale: {x: 1, y: 1.2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1341690196}
@@ -3343,7 +3343,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.003, y: -0.099, z: 0}
-  m_LocalScale: {x: 1, y: 1.2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1505982929}
@@ -3499,9 +3499,9 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 10
-  m_LinearDamping: 0.1
-  m_AngularDamping: 0.1
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -3526,42 +3526,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52baa705213a3964da56af57f2800e66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController2D
-  moveForce: 100
+  moveForce: 20
   maxSpeed: 0
   brakeDamping: 0
-  jumpForce: 16
+  jumpForce: 250
+  jumpLockoutDuration: 0.2
+  bodyRigidbodies:
+  - {fileID: 1425897816}
+  - {fileID: 1623952627}
+  - {fileID: 1214631407}
+  - {fileID: 271691666}
+  - {fileID: 1363851773}
+  - {fileID: 2381400}
+  - {fileID: 923390369}
   BodyPartToFollow: {fileID: 0}
   LeftLegRoot: {fileID: 1266246832}
   LeftLegLimb: {fileID: 1553360774}
   RightLegRoot: {fileID: 1386746613}
   RightLegLimb: {fileID: 1236210361}
   legRootOffset: 0
-  TorsoPartToFollow: {fileID: 0}
+  TorsoPartToFollow: {fileID: 910773812}
   LeftArmRoot: {fileID: 1248168025}
   LeftArmLimb: {fileID: 803220773}
   RightArmRoot: {fileID: 1404141356}
   RightArmLimb: {fileID: 803220773}
-  armRootOffset: 0
-  gravityGrounded: 0
-  gravityAirborne: 1
+  armRootOffset: 0.03
+  rootLerpSpeed: 8
   solidLayer:
     serializedVersion: 2
     m_Bits: 8
   groundCheckDistance: 0.3
   Head: {fileID: 1207997224}
-  maxHeadTilt: 85
-  headTiltSpeed: 3
+  maxHeadTilt: 90
+  headTiltSpeed: 6
   limbs:
   - {fileID: 803220773}
   - {fileID: 1236210361}
   - {fileID: 1908084963}
   - {fileID: 1553360774}
-  stepDistance: 0.05
+  stepDistance: 0.04
   doubleStep: 0
   stepAudio: {fileID: 0}
   stepSoundDelay: 0.1
   _input: {fileID: 1456104972}
-  rootLerpSpeed: 8
 --- !u!1 &1456104969
 GameObject:
   m_ObjectHideFlags: 0
@@ -3832,8 +3839,8 @@ MonoBehaviour:
   rayLength: 0.3
   autoStep: 0
   stepTriggerDistance: 0.1
-  stepCooldown: 0.4
-  stepDuration: 0.3
+  stepCooldown: 0.2
+  stepDuration: 0.15
   stepHeightCurve:
     serializedVersion: 2
     m_Curve:
@@ -3858,7 +3865,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  stepHeightMultiplier: 0.15
+  stepHeightMultiplier: 0.12
 --- !u!1 &1611432518
 GameObject:
   m_ObjectHideFlags: 0
@@ -34120,9 +34127,9 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 3
-  m_LinearDamping: 1
-  m_AngularDamping: 1
+  m_Mass: 1
+  m_LinearDamping: 3
+  m_AngularDamping: 3
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -34157,10 +34164,10 @@ HingeJoint2D:
   m_Motor:
     m_MotorSpeed: 0
     m_MaximumMotorForce: 10000
-  m_UseLimits: 0
+  m_UseLimits: 1
   m_AngleLimits:
-    m_LowerAngle: -90
-    m_UpperAngle: 90
+    m_LowerAngle: -180
+    m_UpperAngle: 180
 --- !u!70 &1623952629
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -34376,8 +34383,8 @@ MonoBehaviour:
   rayLength: 0.3
   autoStep: 0
   stepTriggerDistance: 0.1
-  stepCooldown: 0.4
-  stepDuration: 0.3
+  stepCooldown: 0.2
+  stepDuration: 0.15
   stepHeightCurve:
     serializedVersion: 2
     m_Curve:
@@ -34402,7 +34409,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  stepHeightMultiplier: 0.15
+  stepHeightMultiplier: 0.12
 --- !u!1 &1968058675
 GameObject:
   m_ObjectHideFlags: 0

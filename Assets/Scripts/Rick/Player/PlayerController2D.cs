@@ -8,8 +8,17 @@ public class PlayerController2D : MonoBehaviour
     public float moveForce    = 12f;
     public float maxSpeed     = 8f;
     public float brakeDamping = 0.12f;
-    // -- Jumpint 
+
+    // ── Jump ──────────────────────────────────────────────────────────────
+    [Header("Jump")]
     public float jumpForce = 16f;
+
+    [Tooltip("Seconds after jumping during which ground-check is suppressed and braking is skipped.")]
+    public float jumpLockoutDuration = 0.25f;
+
+    [Tooltip("All Rigidbody2D bodies in the chain. The root RB is added automatically — list only the additional ones here.")]
+    public Rigidbody2D[] bodyRigidbodies;
+
     // ── Leg Root by Contact ───────────────────────────────────────────────
     [Header("Leg Root by Contact")]
     [Tooltip("Central pivot. Roots are placed opposite the contact point, at legRootOffset from this.")]
@@ -20,7 +29,7 @@ public class PlayerController2D : MonoBehaviour
     public Transform RightLegRoot;
     [Tooltip("The leg limb whose ground contact drives the right root position.")]
     public ProceduralLegPlacement2D RightLegLimb;
-    [Tooltip("Distance from the pivot to the root (world units). Root sits opposite the contact point at this distance.")]
+    [Tooltip("Distance from the pivot to the root (world units).")]
     public float legRootOffset = 0.3f;
 
     // ── Arm Root by Contact ───────────────────────────────────────────────
@@ -31,10 +40,11 @@ public class PlayerController2D : MonoBehaviour
     public Transform RightArmRoot;
     public ProceduralLegPlacement2D RightArmLimb;
     public float armRootOffset = 0.3f;
-    // ── Gravity ───────────────────────────────────────────────────────────
-    [Header("Gravity")]
-    public float gravityGrounded = 0f;
-    public float gravityAirborne = 3f;
+
+    // ── Root Smoothing ────────────────────────────────────────────────────
+    [Header("Root Smoothing")]
+    [Tooltip("How fast the roots lerp toward their target world position.")]
+    public float rootLerpSpeed = 8f;
 
     // ── Ground Detection (8 rays) ─────────────────────────────────────────
     [Header("Ground Detection")]
@@ -66,8 +76,18 @@ public class PlayerController2D : MonoBehaviour
     private Rigidbody2D _rb;
     [SerializeField] private InputReader _input;
 
-    private bool  _isGrounded;
+    private bool    _isGrounded;
+    private Vector2 _groundNormal = Vector2.up; // averaged normal of all active ray hits
+    private int     _hitsUp;   // hits whose normal points upward   (floor contacts)
+    private int     _hitsDown; // hits whose normal points downward  (ceiling contacts)
+
+    private bool  _jumpQueued;
     private bool  _jumpConsumed;
+    private float _jumpTime = -999f;
+
+    // True during the lockout window right after a jump fires
+    private bool IsJumping => Time.time < _jumpTime + jumpLockoutDuration;
+
     private Vector2 _lastPosition;
     private float   _distanceTraveled;
     private int     _stepIndex;
@@ -88,24 +108,38 @@ public class PlayerController2D : MonoBehaviour
 
     // ─────────────────────────────────────────────────────────────────────
 
-    private void Start() {
+    private void Start()
+    {
         _rb           = GetComponent<Rigidbody2D>();
         _lastPosition = transform.position;
     }
 
-    private void FixedUpdate() {
+    private void FixedUpdate()
+    {
         Vector2 input = _input != null ? _input.MoveInput : Vector2.zero;
-        ApplyMovement(input);
-        ApplyBraking();
-        ClampSpeeds();
         UpdateGravity();
+        ApplyMovement(input);
+        //ApplyBraking();
+        ClampSpeeds();
         UpdateLimbs();
+
+        if (_jumpQueued)
+        {
+            _jumpQueued = false;
+            DoJump();
+        }
     }
 
-    private void Update() {
+    private void Update()
+    {
         Vector2 input = _input != null ? _input.MoveInput : Vector2.zero;
-        if (_input != null && _input.JumpHeld && !_jumpConsumed) Jump();
-        if (_input != null && !_input.JumpHeld) _jumpConsumed = false;
+
+        bool wantJump = _input != null && _input.JumpHeld;
+        if (wantJump && _isGrounded && !_jumpConsumed && !IsJumping)
+            _jumpQueued = true;
+        if (!wantJump)
+            _jumpConsumed = false;
+
         SetOrientation(input);
         SetHeadRotation(input);
         MoveByRotation();
@@ -115,79 +149,145 @@ public class PlayerController2D : MonoBehaviour
 
     // ── Movement ──────────────────────────────────────────────────────────
 
-    private void ApplyMovement(Vector2 input) {
-        
+    private void ApplyMovement(Vector2 input)
+    {
         _rb.AddForce((Vector2)transform.right * input.x * moveForce, ForceMode2D.Force);
         if (!_isGrounded) return;
-        _rb.AddForce(Vector2.up               * input.y * moveForce, ForceMode2D.Force);
+        _rb.AddForce(Vector2.up * input.y * moveForce, ForceMode2D.Force);
     }
 
-    private void ApplyBraking() {
-        if (_isGrounded) {
-            // On the ground: damp all velocity
+    private void ApplyBraking()
+    {
+        // Skip braking entirely during the jump lockout — don't eat the impulse
+        if (IsJumping) return;
+
+        if (_isGrounded)
+        {
             _rb.linearVelocity = Vector2.Lerp(_rb.linearVelocity, Vector2.zero, brakeDamping);
-        } else {
-            // Airborne: only damp horizontal so the jump impulse travels freely
+        }
+        else
+        {
+            // Airborne: only damp horizontal, leave vertical (gravity + jump arc) alone
             float dampedX = Mathf.Lerp(_rb.linearVelocity.x, 0f, brakeDamping);
             _rb.linearVelocity = new Vector2(dampedX, _rb.linearVelocity.y);
         }
         _rb.angularVelocity = Mathf.Lerp(_rb.angularVelocity, 0f, brakeDamping);
     }
-    private void Jump() {
-        if (!_isGrounded) return;
-        _rb.AddForce((Vector2)transform.up * jumpForce, ForceMode2D.Impulse);
-        _jumpConsumed = true;
-    }
-    private void ClampSpeeds() {
+
+    private void ClampSpeeds()
+    {
+        if (IsJumping) return;
+        if (!_isGrounded) return; // only clamp on ground — in air, let the player overspeed a bit for better jump arcs and midair control
         if (_rb.linearVelocity.magnitude > maxSpeed)
             _rb.linearVelocity = _rb.linearVelocity.normalized * maxSpeed;
     }
 
+    // ── Jump ──────────────────────────────────────────────────────────────
+
+    private void DoJump()
+    {
+        if (!_isGrounded) return;
+
+        _jumpTime     = Time.time;
+        _jumpConsumed = true;
+
+        // Use the averaged surface normal so the jump pushes away from
+        // whatever surface(s) the character is touching — floor, wall, or ceiling.
+        Vector2 impulse = _groundNormal * jumpForce;
+
+        _rb.AddForce(impulse, ForceMode2D.Force);
+
+        if (bodyRigidbodies != null)
+            foreach (var rb in bodyRigidbodies)
+                if (rb != null) rb.AddForce(impulse, ForceMode2D.Force);
+    }
+
     // ── Gravity ───────────────────────────────────────────────────────────
 
-    private void UpdateGravity() {
-        _isGrounded = false;
-        foreach (var dir in _rayDirs) {
-            if (Physics2D.Raycast(transform.position, dir, groundCheckDistance, solidLayer)) {
-                _isGrounded = true;
-                break;
-            }
+    private void UpdateGravity()
+    {
+        // During the lockout window after a jump: stay airborne, don't re-check
+        if (IsJumping)
+        {
+            _isGrounded      = false;
+            _rb.gravityScale = 1f;
+            if (bodyRigidbodies != null)
+                foreach (var rb in bodyRigidbodies)
+                    if (rb != null) rb.gravityScale = 1f;
+            return;
         }
 
-        _rb.gravityScale = _isGrounded ? gravityGrounded : gravityAirborne;
+        _isGrounded = false;
+        _hitsUp     = 0;
+        _hitsDown   = 0;
+        Vector2 normalSum = Vector2.zero;
+        int     hitCount  = 0;
+
+        foreach (var dir in _rayDirs)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(
+                transform.position, dir, groundCheckDistance, solidLayer);
+
+            if (hit.collider == null) continue;
+
+            _isGrounded = true;
+            normalSum  += hit.normal;
+            hitCount++;
+
+            if      (hit.normal.y > 0f) _hitsUp++;
+            else if (hit.normal.y < 0f) _hitsDown++;
+        }
+
+        // Average all hit normals → jump pushes away from every touched surface
+        if (hitCount > 0)
+            _groundNormal = normalSum.normalized;
+
+        // Grounded = gravityScale 0 (stick to surface). Airborne = 1 (normal Unity gravity).
+        float gravity = _isGrounded ? 0f : 1f;
+        _rb.gravityScale = gravity;
+        if (bodyRigidbodies != null)
+            foreach (var rb in bodyRigidbodies)
+                if (rb != null) rb.gravityScale = gravity;
     }
 
     // ── Head ──────────────────────────────────────────────────────────────
 
-    public void SetOrientation(Vector2 input) {
+    public void SetOrientation(Vector2 input)
+    {
         if (Head == null) return;
-        if      (input.x < -0.05f) Head.localScale = new Vector3( 1f, 1f, 1f);
-        else if (input.x >  0.05f) Head.localScale = new Vector3(-1f, 1f, 1f);
+
+        // X: flip based on horizontal movement direction
+        float scaleX = Head.localScale.x;
+        if      (input.x < -0.05f) scaleX =  1f;
+        else if (input.x >  0.05f) scaleX = -1f;
+
+        // Y: flip upside-down when touching ceiling more than floor
+        float scaleY = _hitsDown > _hitsUp ? -1f : 1f;
+
+        Head.localScale = new Vector3(scaleX, scaleY, 1f);
     }
 
     private void SetHeadRotation(Vector2 input)
     {
         if (Head == null) return;
 
-        // Mirror the tilt when the sprite is flipped so the head always tilts
-        // toward the movement direction regardless of which way it faces.
-        // scale.x =  1 → facing left  (natural)  → positive Z = CCW = looking up ✓
-        // scale.x = -1 → facing right (flipped)   → need opposite sign to look up ✓
+        // No vertical input → hold whatever angle the head currently has
+        if (Mathf.Abs(input.y) < 0.05f) return;
+
         float scaleSign   = Mathf.Sign(Head.localScale.x);
         float targetAngle = -input.y * maxHeadTilt * scaleSign;
-
-        // LerpAngle handles the 0↔360 wrap correctly without manual conversion
-        float newAngle = Mathf.LerpAngle(Head.localEulerAngles.z, targetAngle, Time.deltaTime * headTiltSpeed);
+        float newAngle    = Mathf.LerpAngle(
+            Head.localEulerAngles.z, targetAngle, Time.deltaTime * headTiltSpeed);
         Head.localRotation = Quaternion.Euler(0f, 0f, newAngle);
     }
 
     // ── Legs ──────────────────────────────────────────────────────────────
 
-    private void UpdateLimbs() {
+    private void UpdateLimbs()
+    {
         if (limbs == null || limbs.Length == 0) return;
 
         Vector2 velocity = _rb.linearVelocity;
-
         foreach (var limb in limbs)
             if (limb != null) limb.MoveVelocity(velocity);
 
@@ -195,17 +295,20 @@ public class PlayerController2D : MonoBehaviour
         _distanceTraveled += moved;
         _lastPosition      = transform.position;
 
-        if (_distanceTraveled >= stepDistance) {
+        if (_distanceTraveled >= stepDistance)
+        {
             _distanceTraveled = 0f;
             TriggerNextStep();
         }
     }
 
-    private void TriggerNextStep() {
+    private void TriggerNextStep()
+    {
         if (limbs == null || limbs.Length == 0) return;
 
         int tries = 0;
-        while (tries < limbs.Length && limbs[_stepIndex] == null) {
+        while (tries < limbs.Length && limbs[_stepIndex] == null)
+        {
             _stepIndex = (_stepIndex + 1) % limbs.Length;
             tries++;
         }
@@ -213,7 +316,8 @@ public class PlayerController2D : MonoBehaviour
 
         limbs[_stepIndex].Step();
 
-        if (doubleStep) {
+        if (doubleStep)
+        {
             int partner = (_stepIndex + 1) % limbs.Length;
             if (limbs[partner] != null) limbs[partner].Step();
         }
@@ -222,13 +326,10 @@ public class PlayerController2D : MonoBehaviour
 
         _stepIndex = (_stepIndex + 1) % limbs.Length;
     }
-    [Header("Root Smoothing")]
-    [Tooltip("How fast the roots lerp toward their target world position.")]
-    public float rootLerpSpeed = 8f;
 
-    // Places 'root' at (pivot - direction_to_contact * offset), smoothly.
-    // The root ends up on the OPPOSITE side of the pivot from the contact point,
-    // giving the IK chain the full arc length it needs without being forced.
+    // ── IK Roots ─────────────────────────────────────────────────────────
+
+    // Moves 'root' to the opposite side of 'pivot' from the contact point.
     private void MoveRootByContact(
         Transform pivot, Transform root,
         ProceduralLegPlacement2D limb, float offset)
@@ -241,7 +342,6 @@ public class PlayerController2D : MonoBehaviour
 
         if (toContact.sqrMagnitude < 0.001f) return;
 
-        // Opposite side of pivot from the contact point, at 'offset' distance
         Vector2 worldTarget = pivotPos - toContact.normalized * offset;
         root.position = Vector2.Lerp(root.position, worldTarget, Time.deltaTime * rootLerpSpeed);
     }
@@ -260,10 +360,12 @@ public class PlayerController2D : MonoBehaviour
 
     // ── Step Sound ────────────────────────────────────────────────────────
 
-    private void TickStepSound() {
+    private void TickStepSound()
+    {
         if (!_pendingSound || stepAudio == null) return;
         _soundTimer += Time.deltaTime;
-        if (_soundTimer >= stepSoundDelay) {
+        if (_soundTimer >= stepSoundDelay)
+        {
             _soundTimer   = 0f;
             _pendingSound = false;
             stepAudio.Play();
@@ -272,10 +374,12 @@ public class PlayerController2D : MonoBehaviour
 
     // ── Gizmos ────────────────────────────────────────────────────────────
 
-    private void OnDrawGizmos() {
-        // 8 directional ground rays
-        foreach (var dir in _rayDirs) {
-            RaycastHit2D hit = Physics2D.Raycast(transform.position, dir, groundCheckDistance, solidLayer);
+    private void OnDrawGizmos()
+    {
+        foreach (var dir in _rayDirs)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(
+                transform.position, dir, groundCheckDistance, solidLayer);
             Gizmos.color = hit.collider != null ? Color.green : new Color(1f, 0f, 0f, 0.4f);
             Gizmos.DrawLine(
                 transform.position,
@@ -287,5 +391,14 @@ public class PlayerController2D : MonoBehaviour
         // Grounded state ring
         Gizmos.color = Application.isPlaying && _isGrounded ? Color.cyan : Color.grey;
         Gizmos.DrawWireSphere(transform.position, 0.12f);
+
+        // Averaged ground normal → jump direction
+        if (Application.isPlaying && _isGrounded)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(
+                transform.position,
+                (Vector2)transform.position + _groundNormal * 0.5f);
+        }
     }
 }
