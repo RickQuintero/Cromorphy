@@ -1,121 +1,202 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class ProceduralLegPlacement2D : MonoBehaviour {
-
-    public bool legGrounded = false;
-    public Vector2 stepPoint;
-    public Vector2 stepNormal;
-
-    // Resting position is in local 2D space (XY plane)
-    public Vector2 optimalRestingPosition = Vector2.right;
-    public Vector2 restingPosition {
-        get { return (Vector2)transform.TransformPoint(optimalRestingPosition); }
-    }
-
-    public Vector2 worldVelocity = Vector2.right;
-
-    public Vector2 desiredPosition {
-        get {
-            // Random 2D scatter (insideUnitCircle replaces insideUnitSphere)
-            return restingPosition + worldVelocity + (Random.insideUnitCircle * placementRandomization);
-        }
-    }
-
-    public Vector2 worldTarget = Vector2.zero;
+public class ProceduralLegPlacement2D : MonoBehaviour
+{
+    // ── References ────────────────────────────────────────────────────────
+    [Header("References")]
+    [Tooltip("Place this Transform near the foot anchor. 8 rays radiate from here to find the nearest surface.")]
+    public Transform raycastOrigin;
     public Transform ikTarget;
-    public Transform ikPoleTarget;
 
-    public float placementRandomization = 0;
-    public bool autoStep = true;
-
+    // ── Ground Detection ──────────────────────────────────────────────────
+    [Header("Ground Detection")]
     public LayerMask solidLayer;
-    public float stepRadius = 0.25f;
+
+    [Tooltip("Length of each of the 8 directional rays.")]
+    public float rayLength = 0.8f;
+
+    // ── Stepping ──────────────────────────────────────────────────────────
+    [Header("Stepping")]
+    [Tooltip("How far the nearest surface contact must drift before a new step fires.")]
+    public float stepTriggerDistance = 0.15f;
+
+    [Tooltip("Minimum seconds between steps.")]
+    public float stepCooldown = 0.1f;
+
+    [Tooltip("How long the foot travels from old to new position.")]
+    public float stepDuration = 0.15f;
+
+    [Tooltip("Lift arc during a step. Must return 0 at t=0 and t=1 so the foot lands flush.")]
     public AnimationCurve stepHeightCurve;
-    public float stepHeightMultiplier = 0.25f;
-    public float stepCooldown = 1f;
-    public float stepDuration = 0.5f;
-    public float stepOffset;
-    public float lastStep = 0;
 
-    public float percent {
-        get { return Mathf.Clamp01((Time.time - lastStep) / stepDuration); }
-    }
+    public float stepHeightMultiplier = 0.2f;
 
-    void Start() {
-        worldVelocity = Vector2.zero;
-        lastStep = Time.time + stepCooldown * stepOffset;
-        ikTarget.position = (Vector3)restingPosition;
-        Step();
-    }
+    // ── Public state ──────────────────────────────────────────────────────
+    public bool legGrounded { get; private set; }
 
-    void Update() {
-        UpdateIkTarget();
-        if (Time.time > lastStep + stepCooldown && autoStep) {
-            Step();
+    // ── Runtime ───────────────────────────────────────────────────────────
+    private Vector2 _stepFrom;
+    private Vector2 _stepTarget;
+    private Vector2 _surfaceNormal = Vector2.up;
+    private float   _stepStartTime;
+    private float   _lastStepTime;
+
+    private float StepPercent =>
+        Mathf.Clamp01((Time.time - _stepStartTime) / Mathf.Max(stepDuration, 0.001f));
+
+    // 8 directions — cardinal + diagonal
+    private static readonly Vector2[] _dirs = {
+        Vector2.up,
+        Vector2.down,
+        Vector2.left,
+        Vector2.right,
+        new Vector2( 1f,  1f).normalized,
+        new Vector2(-1f,  1f).normalized,
+        new Vector2( 1f, -1f).normalized,
+        new Vector2(-1f, -1f).normalized,
+    };
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────
+
+    void Start()
+    {
+        _stepStartTime = Time.time - stepDuration; // mark as already complete
+        _lastStepTime  = Time.time;
+
+        if (FindBestHit(out Vector2 p, out Vector2 n))
+        {
+            _stepFrom      = p;
+            _stepTarget    = p;
+            _surfaceNormal = n;
         }
-    }
-
-    public void UpdateIkTarget() {
-        stepPoint = AdjustPosition(worldTarget + worldVelocity);
-
-        // In 2D, stepNormal shifts the foot perpendicular to the surface while stepping
-        Vector2 lerpedPos = Vector2.Lerp((Vector2)ikTarget.position, stepPoint, percent);
-        float heightOffset = stepHeightCurve.Evaluate(percent) * stepHeightMultiplier;
-        ikTarget.position = (Vector3)(lerpedPos + stepNormal * heightOffset);
-    }
-
-    public void Step() {
-        stepPoint = worldTarget = AdjustPosition(desiredPosition);
-        lastStep = Time.time;
-    }
-
-    public Vector2 AdjustPosition(Vector2 position) {
-        Vector2 origin = ikPoleTarget.position;
-        Vector2 direction = position - origin;
-
-        // CircleCast2D replaces SphereCast
-        RaycastHit2D hit = Physics2D.CircleCast(
-            origin,
-            stepRadius,
-            direction.normalized,
-            direction.magnitude * 2f,
-            solidLayer
-        );
-
-        if (hit.collider != null) {
-            Debug.DrawLine(origin, hit.point, Color.green, 0f);
-            position = hit.point;
-            stepNormal = hit.normal;
-            legGrounded = true;
-        } else {
-            Debug.DrawLine(origin, restingPosition, Color.red, 0f);
-            position = restingPosition;
-            stepNormal = Vector2.zero;
-            legGrounded = false;
+        else
+        {
+            _stepFrom   = OriginPos();
+            _stepTarget = OriginPos();
         }
-        return position;
+
+        if (ikTarget != null) ikTarget.position = _stepTarget;
     }
 
-    public void MoveVelocity(Vector2 newVelocity) {
-        worldVelocity = Vector2.Lerp(worldVelocity, newVelocity, 1f - percent);
+    void Update()
+    {
+        bool hit = FindBestHit(out Vector2 bestHit, out Vector2 bestNormal);
+        legGrounded = hit;
+
+        // Auto-step: fire when the nearest surface drifts past the trigger threshold
+        if (hit
+            && Time.time >= _lastStepTime + stepCooldown
+            && Vector2.Distance(bestHit, _stepTarget) > stepTriggerDistance)
+        {
+            BeginStep(bestHit, bestNormal);
+        }
+
+        MoveIkTarget();
     }
 
-    public void OnDrawGizmos() {
-        if (ikPoleTarget == null) return;
+    // ── Step logic ────────────────────────────────────────────────────────
 
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine((Vector3)restingPosition, (Vector3)worldTarget);
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine((Vector3)worldTarget, (Vector3)stepPoint);
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(restingPosition, 0.02f);
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere((Vector3)worldTarget, 0.02f);
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere((Vector3)stepPoint, 0.02f);
+    private void BeginStep(Vector2 target, Vector2 normal)
+    {
+        _stepFrom      = ikTarget != null ? (Vector2)ikTarget.position : _stepTarget;
+        _stepTarget    = target;
+        _surfaceNormal = normal;
+        _stepStartTime = Time.time;
+        _lastStepTime  = Time.time;
+    }
+
+    private void MoveIkTarget()
+    {
+        if (ikTarget == null) return;
+
+        float   t    = StepPercent;
+        Vector2 flat = Vector2.Lerp(_stepFrom, _stepTarget, t);
+        float   lift = stepHeightCurve != null
+            ? stepHeightCurve.Evaluate(t) * stepHeightMultiplier
+            : 0f;
+
+        ikTarget.position = (Vector3)(flat + _surfaceNormal * lift);
+    }
+
+    // ── Surface scan ─────────────────────────────────────────────────────
+
+    // Casts all 8 rays and returns the nearest hit.
+    private bool FindBestHit(out Vector2 hitPoint, out Vector2 normal)
+    {
+        Vector2 origin   = OriginPos();
+        float   bestDist = float.MaxValue;
+        hitPoint = origin;
+        normal   = Vector2.up;
+        bool found = false;
+
+        foreach (var dir in _dirs)
+        {
+            RaycastHit2D h = Physics2D.Raycast(origin, dir, rayLength, solidLayer);
+            if (h.collider != null && h.distance < bestDist)
+            {
+                bestDist = h.distance;
+                hitPoint = h.point;
+                normal   = h.normal;
+                found    = true;
+            }
+        }
+
+        return found;
+    }
+
+    private Vector2 OriginPos() =>
+        raycastOrigin != null ? (Vector2)raycastOrigin.position : (Vector2)transform.position;
+
+    // ── External API (called by PlayerController2D) ───────────────────────
+
+    // Force an immediate step to the current best hit.
+    public void Step()
+    {
+        if (FindBestHit(out Vector2 p, out Vector2 n)) BeginStep(p, n);
+    }
+
+    // No-op kept so PlayerController2D compiles without changes.
+    public void MoveVelocity(Vector2 _) { }
+
+    // ── Gizmos ───────────────────────────────────────────────────────────
+
+    void OnDrawGizmos()
+    {
+        Vector2 origin = OriginPos();
+
+        // Origin marker
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(ikPoleTarget.position, 0.02f);
+        Gizmos.DrawWireSphere(origin, 0.04f);
+
+        // 8 rays
+        foreach (var dir in _dirs)
+        {
+            RaycastHit2D h = Physics2D.Raycast(origin, dir, rayLength, solidLayer);
+            if (h.collider != null)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(origin, h.point);
+                Gizmos.DrawWireSphere(h.point, 0.025f);
+            }
+            else
+            {
+                Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.35f);
+                Gizmos.DrawLine(origin, origin + dir * rayLength);
+            }
+        }
+
+        // Current step target and IK target
+        if (Application.isPlaying)
+        {
+            Gizmos.color = legGrounded ? Color.cyan : Color.red;
+            Gizmos.DrawWireSphere(_stepTarget, 0.04f);
+
+            if (ikTarget != null)
+            {
+                Gizmos.color = Color.white;
+                Gizmos.DrawWireSphere(ikTarget.position, 0.03f);
+                Gizmos.DrawLine(_stepTarget, ikTarget.position);
+            }
+        }
     }
 }

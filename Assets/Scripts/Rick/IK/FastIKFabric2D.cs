@@ -3,29 +3,35 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace DitzelGames.FastIK
+namespace RicksonDevs.FastIK
 {
+    [System.Serializable]
+    public struct BoneConstraint
+    {
+        [Tooltip("Min angle relative to parent bone direction (degrees, ≤ 0 = clockwise).")]
+        [Range(-180f, 0f)]
+        public float MinAngle;
+
+        [Tooltip("Max angle relative to parent bone direction (degrees, ≥ 0 = counter-clockwise).")]
+        [Range(0f, 180f)]
+        public float MaxAngle;
+    }
+
     /// <summary>
     /// FABRIK IK Solver — 2D version.
-    /// All positions are solved in the XY plane.
-    /// Rotations are applied around the Z axis only.
+    /// All positions are solved in the XY plane; rotations around Z only.
+    ///
+    /// Constraints: one BoneConstraint per bone segment (index 0 = segment closest to root).
+    /// Leave the array empty to run unconstrained.
     /// </summary>
     public class FastIKFabric2D : MonoBehaviour
     {
-        /// <summary>
-        /// Chain length of bones
-        /// </summary>
         public int ChainLength = 2;
-
-        /// <summary>
-        /// Target the chain should reach toward
-        /// </summary>
         public Transform Target;
 
-        /// <summary>
-        /// Pole target used to control which side the chain bends toward
-        /// </summary>
-        public Transform Pole;
+        [Header("Joint Constraints (index 0 = closest to root)")]
+        [Tooltip("One entry per bone segment. Controls how much each joint can bend relative to its parent.")]
+        public BoneConstraint[] Constraints;
 
         [Header("Solver Parameters")]
         public int Iterations = 10;
@@ -34,29 +40,25 @@ namespace DitzelGames.FastIK
         [Range(0, 1)]
         public float SnapBackStrength = 1f;
 
-        protected float[] BonesLength;       // Length of each bone segment (tip → root order)
-        protected float CompleteLength;
-        protected Transform[] Bones;
-        protected Vector2[] Positions;       // 2D positions in root-local space
-        protected Vector2[] StartDirectionSucc;
+        protected float[]      BonesLength;
+        protected float        CompleteLength;
+        protected Transform[]  Bones;
+        protected Vector2[]    Positions;
+        protected Vector2[]    StartDirectionSucc;
         protected Quaternion[] StartRotationBone;
-        protected Quaternion StartRotationTarget;
-        protected Transform Root;
+        protected Quaternion   StartRotationTarget;
+        protected Transform    Root;
 
-        void Awake()
-        {
-            Init();
-        }
+        void Awake() => Init();
 
         void Init()
         {
-            Bones             = new Transform[ChainLength + 1];
-            Positions         = new Vector2[ChainLength + 1];
-            BonesLength       = new float[ChainLength];
+            Bones              = new Transform[ChainLength + 1];
+            Positions          = new Vector2[ChainLength + 1];
+            BonesLength        = new float[ChainLength];
             StartDirectionSucc = new Vector2[ChainLength + 1];
-            StartRotationBone = new Quaternion[ChainLength + 1];
+            StartRotationBone  = new Quaternion[ChainLength + 1];
 
-            // Walk up to find the root ancestor
             Root = transform;
             for (int i = 0; i <= ChainLength; i++)
             {
@@ -65,7 +67,6 @@ namespace DitzelGames.FastIK
                 Root = Root.parent;
             }
 
-            // Auto-create a target if none is assigned
             if (Target == null)
             {
                 Target = new GameObject(gameObject.name + " Target").transform;
@@ -73,7 +74,6 @@ namespace DitzelGames.FastIK
             }
             StartRotationTarget = GetRotationRootSpace(Target);
 
-            // Populate bone chain from tip (this transform) to root
             var current = transform;
             CompleteLength = 0;
             for (int i = Bones.Length - 1; i >= 0; i--)
@@ -82,13 +82,9 @@ namespace DitzelGames.FastIK
                 StartRotationBone[i] = GetRotationRootSpace(current);
 
                 if (i == Bones.Length - 1)
-                {
-                    // Leaf bone: direction toward target
                     StartDirectionSucc[i] = GetPositionRootSpace(Target) - GetPositionRootSpace(current);
-                }
                 else
                 {
-                    // Mid bone: direction toward child bone
                     StartDirectionSucc[i]  = GetPositionRootSpace(Bones[i + 1]) - GetPositionRootSpace(current);
                     BonesLength[i]         = StartDirectionSucc[i].magnitude;
                     CompleteLength        += BonesLength[i];
@@ -98,96 +94,86 @@ namespace DitzelGames.FastIK
             }
         }
 
-        void LateUpdate()
-        {
-            ResolveIK();
-        }
+        void LateUpdate() => ResolveIK();
 
         private void ResolveIK()
         {
             if (Target == null) return;
             if (BonesLength.Length != ChainLength) Init();
 
-            // Snapshot current bone positions in root space
             for (int i = 0; i < Bones.Length; i++)
                 Positions[i] = GetPositionRootSpace(Bones[i]);
 
-            Vector2 targetPosition = GetPositionRootSpace(Target);
+            Vector2    targetPosition = GetPositionRootSpace(Target);
             Quaternion targetRotation = GetRotationRootSpace(Target);
 
-            // ── FABRIK ──────────────────────────────────────────────────
             if ((targetPosition - Positions[0]).sqrMagnitude >= CompleteLength * CompleteLength)
             {
-                // Target is out of reach — stretch the chain straight toward it
+                // Out of reach — stretch toward target
                 Vector2 direction = (targetPosition - Positions[0]).normalized;
                 for (int i = 1; i < Positions.Length; i++)
                     Positions[i] = Positions[i - 1] + direction * BonesLength[i - 1];
             }
             else
             {
-                // Snap-back toward rest pose
+                // Snap back toward rest pose
                 for (int i = 0; i < Positions.Length - 1; i++)
-                    Positions[i + 1] = Vector2.Lerp(Positions[i + 1], Positions[i] + StartDirectionSucc[i], SnapBackStrength);
+                    Positions[i + 1] = Vector2.Lerp(
+                        Positions[i + 1],
+                        Positions[i] + StartDirectionSucc[i],
+                        SnapBackStrength);
 
                 for (int iteration = 0; iteration < Iterations; iteration++)
                 {
                     // Backward pass (tip → root)
                     for (int i = Positions.Length - 1; i > 0; i--)
                     {
-                        if (i == Positions.Length - 1)
-                            Positions[i] = targetPosition;
-                        else
-                            Positions[i] = Positions[i + 1] + (Positions[i] - Positions[i + 1]).normalized * BonesLength[i];
+                        Positions[i] = (i == Positions.Length - 1)
+                            ? targetPosition
+                            : Positions[i + 1] + (Positions[i] - Positions[i + 1]).normalized * BonesLength[i];
                     }
 
-                    // Forward pass (root → tip)
+                    // Forward pass (root → tip) with angle clamping
                     for (int i = 1; i < Positions.Length; i++)
-                        Positions[i] = Positions[i - 1] + (Positions[i] - Positions[i - 1]).normalized * BonesLength[i - 1];
+                    {
+                        Vector2 rawDir = Positions[i] - Positions[i - 1];
+                        if (rawDir.sqrMagnitude < 0.00001f) rawDir = StartDirectionSucc[i - 1];
+                        rawDir = rawDir.normalized;
+
+                        int ci = i - 1; // constraint index: 0 = root-side segment
+                        if (Constraints != null && ci < Constraints.Length)
+                        {
+                            // Parent bone direction: rest dir for the first segment, previous segment for the rest
+                            Vector2 parentDir = (i == 1)
+                                ? StartDirectionSucc[0].normalized
+                                : (Positions[i - 1] - Positions[i - 2]).normalized;
+
+                            float angle   = Vector2.SignedAngle(parentDir, rawDir);
+                            float clamped = Mathf.Clamp(angle, Constraints[ci].MinAngle, Constraints[ci].MaxAngle);
+
+                            if (!Mathf.Approximately(angle, clamped))
+                            {
+                                float rad = clamped * Mathf.Deg2Rad;
+                                float cos = Mathf.Cos(rad), sin = Mathf.Sin(rad);
+                                rawDir = new Vector2(
+                                    parentDir.x * cos - parentDir.y * sin,
+                                    parentDir.x * sin + parentDir.y * cos);
+                            }
+                        }
+
+                        Positions[i] = Positions[i - 1] + rawDir * BonesLength[i - 1];
+                    }
 
                     if ((Positions[Positions.Length - 1] - targetPosition).sqrMagnitude < Delta * Delta)
                         break;
                 }
             }
 
-            // ── POLE TARGET ─────────────────────────────────────────────
-            // In 2D the pole is a point that defines which side the chain bends toward.
-            // For each mid-bone we compute the signed angle from the current joint direction
-            // to the pole direction, then rotate the joint to align with the pole side.
-            if (Pole != null)
-            {
-                Vector2 polePosition = GetPositionRootSpace(Pole);
-
-                for (int i = 1; i < Positions.Length - 1; i++)
-                {
-                    Vector2 segmentDir  = Positions[i + 1] - Positions[i - 1]; // overall limb direction
-                    Vector2 toJoint     = Positions[i]     - Positions[i - 1];
-                    Vector2 toPole      = polePosition      - Positions[i - 1];
-
-                    // Project both vectors onto the axis perpendicular to the limb direction
-                    // (equivalent to the plane-projection in the 3D version)
-                    Vector2 perpAxis = new Vector2(-segmentDir.y, segmentDir.x).normalized;
-                    float jointSide  = Vector2.Dot(toJoint, perpAxis);
-                    float poleSide   = Vector2.Dot(toPole,  perpAxis);
-
-                    // Signed angle from the current joint position to the pole side
-                    float signedAngle = Vector2.SignedAngle(toJoint, toPole);
-
-                    // Only apply if the joint and pole are on opposite sides, 
-                    // or if we want to enforce the pole's side direction
-                    if (Mathf.Sign(jointSide) != Mathf.Sign(poleSide))
-                    {
-                        Positions[i] = Positions[i - 1] +
-                            (Vector2)(Quaternion.Euler(0f, 0f, signedAngle) * (Vector3)toJoint);
-                    }
-                }
-            }
-
-            // ── APPLY POSITIONS AND ROTATIONS ────────────────────────────
+            // Apply positions and rotations
             for (int i = 0; i < Positions.Length; i++)
             {
                 if (i == Positions.Length - 1)
                 {
-                    // Leaf bone: match the target rotation
                     SetRotationRootSpace(Bones[i],
                         Quaternion.Inverse(targetRotation) *
                         StartRotationTarget *
@@ -195,16 +181,13 @@ namespace DitzelGames.FastIK
                 }
                 else
                 {
-                    // Mid / root bone: point toward the next bone in the chain
-                    Vector2 dir = Positions[i + 1] - Positions[i];
-                    float   angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-
+                    Vector2 dir        = Positions[i + 1] - Positions[i];
+                    float   angle      = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
                     Vector2 startDir   = StartDirectionSucc[i];
                     float   startAngle = Mathf.Atan2(startDir.y, startDir.x) * Mathf.Rad2Deg;
-                    float   deltaAngle = angle - startAngle;
 
                     SetRotationRootSpace(Bones[i],
-                        Quaternion.Euler(0f, 0f, deltaAngle) *
+                        Quaternion.Euler(0f, 0f, angle - startAngle) *
                         Quaternion.Inverse(StartRotationBone[i]));
                 }
 
@@ -212,43 +195,38 @@ namespace DitzelGames.FastIK
             }
         }
 
-        // ── ROOT-SPACE HELPERS ───────────────────────────────────────────
+        // ── Root-space helpers ────────────────────────────────────────────────
 
         private Vector2 GetPositionRootSpace(Transform current)
         {
-            if (Root == null)
-                return current.position;
+            if (Root == null) return current.position;
             return Quaternion.Inverse(Root.rotation) * (current.position - Root.position);
         }
 
         private void SetPositionRootSpace(Transform current, Vector2 position)
         {
-            if (Root == null)
-                current.position = position;
-            else
-                current.position = Root.rotation * (Vector3)position + Root.position;
+            if (Root == null) current.position = position;
+            else              current.position  = Root.rotation * (Vector3)position + Root.position;
         }
 
         private Quaternion GetRotationRootSpace(Transform current)
         {
-            if (Root == null)
-                return current.rotation;
+            if (Root == null) return current.rotation;
             return Quaternion.Inverse(current.rotation) * Root.rotation;
         }
 
         private void SetRotationRootSpace(Transform current, Quaternion rotation)
         {
-            if (Root == null)
-                current.rotation = rotation;
-            else
-                current.rotation = Root.rotation * rotation;
+            if (Root == null) current.rotation = rotation;
+            else              current.rotation  = Root.rotation * rotation;
         }
 
-        // ── GIZMOS ───────────────────────────────────────────────────────
+        // ── Gizmos ───────────────────────────────────────────────────────────
+
         void OnDrawGizmos()
         {
 #if UNITY_EDITOR
-            var current = this.transform;
+            var current = transform;
             for (int i = 0; i < ChainLength && current != null && current.parent != null; i++)
             {
                 float dist  = Vector3.Distance(current.position, current.parent.position);
