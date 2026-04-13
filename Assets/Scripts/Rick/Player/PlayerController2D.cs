@@ -78,9 +78,6 @@ public class PlayerController2D : MonoBehaviour
 
     private bool    _isGrounded;
     private Vector2 _groundNormal = Vector2.up; // averaged normal of all active ray hits
-    private int     _hitsUp;   // hits whose normal points upward   (floor contacts)
-    private int     _hitsDown; // hits whose normal points downward  (ceiling contacts)
-
     private bool  _jumpQueued;
     private bool  _jumpConsumed;
     private float _jumpTime = -999f;
@@ -218,8 +215,6 @@ public class PlayerController2D : MonoBehaviour
         }
 
         _isGrounded = false;
-        _hitsUp     = 0;
-        _hitsDown   = 0;
         Vector2 normalSum = Vector2.zero;
         int     hitCount  = 0;
 
@@ -233,9 +228,6 @@ public class PlayerController2D : MonoBehaviour
             _isGrounded = true;
             normalSum  += hit.normal;
             hitCount++;
-
-            if      (hit.normal.y > 0f) _hitsUp++;
-            else if (hit.normal.y < 0f) _hitsDown++;
         }
 
         // Average all hit normals → jump pushes away from every touched surface
@@ -261,24 +253,19 @@ public class PlayerController2D : MonoBehaviour
         if      (input.x < -0.05f) scaleX =  1f;
         else if (input.x >  0.05f) scaleX = -1f;
 
-        // Y: flip upside-down when touching ceiling more than floor
-        float scaleY = _hitsDown > _hitsUp ? -1f : 1f;
-
-        Head.localScale = new Vector3(scaleX, scaleY, 1f);
+        Head.localScale = new Vector3(scaleX, Head.localScale.y, 1f);
     }
 
     private void SetHeadRotation(Vector2 input)
     {
         if (Head == null) return;
 
-        // No vertical input → hold whatever angle the head currently has
-        if (Mathf.Abs(input.y) < 0.05f) return;
-
-        float scaleSign   = Mathf.Sign(Head.localScale.x);
-        float targetAngle = -input.y * maxHeadTilt * scaleSign;
-        float newAngle    = Mathf.LerpAngle(
-            Head.localEulerAngles.z, targetAngle, Time.deltaTime * headTiltSpeed);
-        Head.localRotation = Quaternion.Euler(0f, 0f, newAngle);
+        // Tilt toward the vertical input direction; returns to 0 when released
+        float targetAngle = -input.y * maxHeadTilt * Head.localScale.x; // flip tilt direction when facing left
+        float angle = Mathf.LerpAngle(Head.localEulerAngles.z, targetAngle, Time.deltaTime * headTiltSpeed);
+        //only roates when moving in any direction
+        if (input.magnitude > 0.1f)
+        Head.localEulerAngles = new Vector3(0f, 0f, angle);
     }
 
     // ── Legs ──────────────────────────────────────────────────────────────
