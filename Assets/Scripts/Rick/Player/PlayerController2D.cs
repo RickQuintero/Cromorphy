@@ -13,6 +13,9 @@ public class PlayerController2D : MonoBehaviour
     [Header("Jump")]
     public float jumpForce = 16f;
 
+    [Tooltip("Linear and angular damping applied to bodyRigidbodies when grounded (0 = free-fall).")]
+    public float groundedDamping = 4f;
+
     [Tooltip("Seconds after jumping during which ground-check is suppressed and braking is skipped.")]
     public float jumpLockoutDuration = 0.25f;
 
@@ -123,7 +126,7 @@ public class PlayerController2D : MonoBehaviour
         if (_jumpQueued)
         {
             _jumpQueued = false;
-            DoJump();
+            DoJump(input);
         }
     }
 
@@ -181,16 +184,16 @@ public class PlayerController2D : MonoBehaviour
 
     // ── Jump ──────────────────────────────────────────────────────────────
 
-    private void DoJump()
+    private void DoJump(Vector2 input)
     {
         if (!_isGrounded) return;
 
         _jumpTime     = Time.time;
         _jumpConsumed = true;
 
-        // Use the averaged surface normal so the jump pushes away from
-        // whatever surface(s) the character is touching — floor, wall, or ceiling.
-        Vector2 impulse = _groundNormal * jumpForce;
+        // Jump in the input direction; fall back to the surface normal when no input is held.
+        Vector2 dir     = input.sqrMagnitude > 0.01f ? input.normalized : _groundNormal;
+        Vector2 impulse = dir * jumpForce;
 
         _rb.AddForce(impulse, ForceMode2D.Force);
 
@@ -210,7 +213,12 @@ public class PlayerController2D : MonoBehaviour
             _rb.gravityScale = 1f;
             if (bodyRigidbodies != null)
                 foreach (var rb in bodyRigidbodies)
-                    if (rb != null) rb.gravityScale = 1f;
+                    if (rb != null)
+                    {
+                        rb.gravityScale   = 1f;
+                        rb.linearDamping  = 0f;
+                        rb.angularDamping = 0f;
+                    }
             return;
         }
 
@@ -236,10 +244,16 @@ public class PlayerController2D : MonoBehaviour
 
         // Grounded = gravityScale 0 (stick to surface). Airborne = 1 (normal Unity gravity).
         float gravity = _isGrounded ? 0f : 1f;
+        float damping = _isGrounded ? groundedDamping : 0f;
         _rb.gravityScale = gravity;
         if (bodyRigidbodies != null)
             foreach (var rb in bodyRigidbodies)
-                if (rb != null) rb.gravityScale = gravity;
+                if (rb != null)
+                {
+                    rb.gravityScale    = gravity;
+                    rb.linearDamping   = damping;
+                    rb.angularDamping  = damping;
+                }
     }
 
     // ── Head ──────────────────────────────────────────────────────────────
@@ -250,8 +264,8 @@ public class PlayerController2D : MonoBehaviour
 
         // X: flip based on horizontal movement direction
         float scaleX = Head.localScale.x;
-        if      (input.x < -0.05f) scaleX =  1f;
-        else if (input.x >  0.05f) scaleX = -1f;
+        if      (input.x < -0.05f) scaleX =  -1f;
+        else if (input.x >  0.05f) scaleX = 1f;
 
         Head.localScale = new Vector3(scaleX, Head.localScale.y, 1f);
     }

@@ -11,7 +11,8 @@ public class ProceduralLegPlacement2D : MonoBehaviour
     // ── Ground Detection ──────────────────────────────────────────────────
     [Header("Ground Detection")]
     public LayerMask solidLayer;
-
+    [Tooltip("The strength of gravity applied when the leg is not grounded.")]
+    public float gravityStrength = 9.81f;
     [Tooltip("Length of each of the 8 directional rays.")]
     public float rayLength = 0.8f;
 
@@ -97,8 +98,14 @@ public class ProceduralLegPlacement2D : MonoBehaviour
         {
             BeginStep(bestHit, bestNormal);
         }
-
-        MoveIkTarget();
+        if (legGrounded)
+        {
+            MoveIkTarget();
+        }
+        else
+        {
+            MoveIKTargetGravity();
+        }
     }
 
     // ── Step logic ────────────────────────────────────────────────────────
@@ -123,6 +130,12 @@ public class ProceduralLegPlacement2D : MonoBehaviour
             : 0f;
 
         ikTarget.position = (Vector3)(flat + _surfaceNormal * lift);
+    }
+    private void MoveIKTargetGravity()
+    {
+            //Apply a fake gravity effect when not grounded by moving the IK target downward over time
+            if (ikTarget == null) return;
+            ikTarget.position += Vector3.down * gravityStrength * Time.deltaTime;
     }
 
     // ── Surface scan ─────────────────────────────────────────────────────
