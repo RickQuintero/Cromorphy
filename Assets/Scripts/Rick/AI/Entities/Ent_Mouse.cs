@@ -1,60 +1,50 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
-/// Mouse AI — simple prey. Cannot climb walls or ceilings.
-///
-/// Uses standard Unity gravity (gravityScale 1) and direct horizontal velocity.
-///
-/// Detection raycasts:
-///   Downward (single)   — ground check, prevents walking off edges
-///   Forward  (single)   — wall detection, flips direction
-///   Edge check          — forward + offset downward, detects platform end
-///   OverlapCircle       — predator proximity check (simpler than raycasts for radius)
-///
-/// Ecosystem lifecycle:
-///   WANDER ⟷ FLEE
-///
-/// Setup requirements:
-///   - solidLayer    → terrain/walls
-///   - predatorLayer → snake layer
-///   - Register in EntityPoolManager.
+/// Mouse AI — Horizontal Wander Edition.
+/// Uses Left/Right raycasts to find platform limits, then picks a NavMesh point between them.
 /// </summary>
+[RequireComponent(typeof(NavMeshAgent))]
 public class Ent_Mouse : AIAgent
 {
-    // ── Inspector ─────────────────────────────────────────────────────────
-
-    [Header("Mouse Speeds")]
+    [Header("Speeds")]
     public float wanderSpeed = 2f;
     public float fleeSpeed   = 5f;
 
-    [Header("Ground & Wall Detection")]
-    [Tooltip("Length of the single downward raycast for ground and edge detection.")]
-    public float groundCheckDist = 0.4f;
+    [Header("Horizontal Wander")]
+    [Tooltip("Maximum distance to look left/right for a wander point.")]
+    public float maxWanderRange = 5f;
+    public float wanderArrivalDist = 0.3f;
+    public float wanderPauseMin = 1f;
+    public float wanderPauseMax = 3f;
 
-    [Tooltip("Forward raycast length for wall detection.")]
-    public float wallCheckDist = 0.3f;
-
-    [Header("Predator Detection")]
-    [Tooltip("Layer snakes live on.")]
+    [Header("Detection")]
     public LayerMask predatorLayer;
+    public float fleeDetectionRadius = 4f;
+    public float fleeCooldown = 2f;
 
-    [Tooltip("Radius within which the mouse detects a predator and switches to Flee.")]
-    public float fleeDetectionRadius = 3f;
+    private NavMeshAgent _agent;
+    private Vector3      _currentDestination;
+    
+    // Debugging values for Gizmos
+    private float _leftLimitX;
+    private float _rightLimitX;
 
-    [Tooltip("Seconds without a predator in range before returning to Wander.")]
-    public float fleeCooldown = 1.5f;
-
-    // ── Runtime (read by nested states) ──────────────────────────────────
-
-    [System.NonSerialized] public bool  IsGrounded;
-    [System.NonSerialized] public float FleeTimer;
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────
+    [System.NonSerialized] public bool  WanderPausing;
+    [System.NonSerialized] public float WanderPauseTimer;
+    [System.NonSerialized] public float WanderPauseDuration;
 
     protected override void Awake()
     {
         base.Awake();
-        Rb.gravityScale = 1f;   // mice fall normally, snakes do not
+        _agent = GetComponent<NavMeshAgent>();
+        _agent.updatePosition = false;
+        _agent.updateRotation = false;
+        _agent.updateUpAxis   = false; 
+        
+        Rb.freezeRotation = true;
+        Rb.gravityScale   = 1f; 
     }
 
     protected override void RegisterStates()
@@ -65,53 +55,72 @@ public class Ent_Mouse : AIAgent
 
     protected override void OnSpawned()
     {
-        Target        = null;
-        FleeTimer     = 0f;
-        IsGrounded    = false;
-        FaceDirection = Random.value > 0.5f ? 1f : -1f;
+        _currentDestination = transform.position;
+        WanderPausing       = false;
+        Target              = null;
+        _agent.enabled      = true;
         StateMachine.SetState(AIStateID.Wander);
     }
 
-    // ── Detection helpers (called by states) ─────────────────────────────
-
-    /// <summary>
-    /// Single downward raycast. Updates IsGrounded and returns the result.
-    /// </summary>
-    public bool UpdateGroundCheck()
+    protected override void FixedUpdate()
     {
-        RaycastHit2D hit = Physics2D.Raycast(
-            transform.position, Vector2.down, groundCheckDist, solidLayer);
-        IsGrounded = hit.collider != null;
-        return IsGrounded;
+        _agent.nextPosition = transform.position;
+        base.FixedUpdate();
     }
 
-    /// <summary>Returns true if there is a wall directly ahead in FaceDirection.</summary>
-    public bool IsWallAhead()
+    // ── Movement & Pathing ───────────────────────────────────────────────
+
+    public void FollowPath(float speed)
     {
-        RaycastHit2D hit = Physics2D.Raycast(
-            transform.position,
-            new Vector2(FaceDirection, 0f),
-            wallCheckDist,
-            solidLayer);
-        return hit.collider != null;
+        if (_agent.pathPending || !_agent.hasPath) return;
+
+        Vector2 steering = _agent.steeringTarget;
+        Vector2 dir      = steering - (Vector2)transform.position;
+
+        if (dir.sqrMagnitude < 0.01f) return;
+
+        // Apply horizontal velocity, keep existing vertical velocity (gravity)
+        Rb.linearVelocity = new Vector2(Mathf.Sign(dir.x) * speed, Rb.linearVelocity.y);
     }
 
-    /// <summary>
-    /// Returns true when the platform ends just ahead (no ground below the next step).
-    /// Prevents the mouse from walking off ledges.
-    /// </summary>
-    public bool IsEdgeAhead()
+    public void SetDestination(Vector3 pos)
     {
-        // Offset the origin one wall-check ahead, then look straight down
-        Vector2 origin = (Vector2)transform.position + new Vector2(FaceDirection * wallCheckDist, 0f);
-        RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, groundCheckDist * 1.5f, solidLayer);
-        return hit.collider == null;    // true = no ground ahead = edge
+        _currentDestination = pos;
+        _agent.isStopped    = false;
+        _agent.SetDestination(pos);
     }
 
     /// <summary>
-    /// OverlapCircle scan for any predator within fleeDetectionRadius.
-    /// More efficient than raycasts for an omnidirectional radius check.
+    /// Finds a point strictly to the left or right by raycasting for walls,
+    /// then sampling the NavMesh to ensure it is on a walkable surface.
     /// </summary>
+    public bool TryGetHorizontalWanderPoint(out Vector3 point)
+    {
+        Vector2 origin = transform.position;
+
+        // 1. Raycast Left and Right to find the physical boundaries (walls)
+        RaycastHit2D hitLeft  = Physics2D.Raycast(origin, Vector2.left, maxWanderRange, solidLayer);
+        RaycastHit2D hitRight = Physics2D.Raycast(origin, Vector2.right, maxWanderRange, solidLayer);
+
+        _leftLimitX  = hitLeft.collider  != null ? hitLeft.point.x  : origin.x - maxWanderRange;
+        _rightLimitX = hitRight.collider != null ? hitRight.point.x : origin.x + maxWanderRange;
+
+        // 2. Pick a random X between those boundaries
+        float randomX = Random.Range(_leftLimitX, _rightLimitX);
+        Vector3 candidatePos = new Vector3(randomX, origin.y, 0f);
+
+        // 3. Snap to NavMesh to ensure it's not "inside" the floor or floating
+        // We use a small search radius to keep it on the current platform
+        if (NavMesh.SamplePosition(candidatePos, out NavMeshHit hit, 1.0f, NavMesh.AllAreas))
+        {
+            point = hit.position;
+            return true;
+        }
+
+        point = transform.position;
+        return false;
+    }
+
     public bool TryDetectPredator(out Transform predator)
     {
         predator = null;
@@ -120,142 +129,108 @@ public class Ent_Mouse : AIAgent
         return false;
     }
 
-    // ── Gizmos ────────────────────────────────────────────────────────────
+    // ── Gizmos ───────────────────────────────────────────────────────────
 
     private void OnDrawGizmos()
     {
-        Vector2 pos = transform.position;
-        float   dir = Application.isPlaying ? FaceDirection : 1f;
+        if (!Application.isPlaying) return;
 
-        // Ground check
-        Gizmos.color = Application.isPlaying && IsGrounded
-            ? Color.green : new Color(1f, 0.2f, 0.2f, 0.6f);
-        Gizmos.DrawLine(pos, pos + Vector2.down * groundCheckDist);
-
-        // Wall check
+        // Draw the horizontal "search" beam
         Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(pos, pos + new Vector2(dir, 0f) * wallCheckDist);
+        Gizmos.DrawLine(new Vector3(_leftLimitX, transform.position.y, 0), 
+                        new Vector3(_rightLimitX, transform.position.y, 0));
 
-        // Edge check origin
-        Vector2 edgeOrigin = pos + new Vector2(dir * wallCheckDist, 0f);
-        Gizmos.color = new Color(1f, 0.6f, 0f, 0.8f);
-        Gizmos.DrawLine(edgeOrigin, edgeOrigin + Vector2.down * groundCheckDist * 1.5f);
+        // Destination Marker
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(_currentDestination, 0.2f);
 
-        // Flee detection radius
-        Gizmos.color = new Color(1f, 0f, 0f, 0.12f);
-        Gizmos.DrawWireSphere(pos, fleeDetectionRadius);
+        // Predator Radius
+        Gizmos.color = new Color(1, 0, 0, 0.15f);
+        Gizmos.DrawWireSphere(transform.position, fleeDetectionRadius);
     }
 
     // ═════════════════════════════════════════════════════════════════════
-    // STATES
+    // STATES (Same structure, updated logic)
     // ═════════════════════════════════════════════════════════════════════
 
-    // ─────────────────────────────────────────────────────────────────────
-    /// <summary>
-    /// Random horizontal patrol.
-    /// Flips on walls, edges, and occasionally at random.
-    /// Switches to Flee the moment a predator enters the detection radius.
-    /// </summary>
     private class MouseWanderState : AIState
     {
         public override AIStateID ID => AIStateID.Wander;
+        private bool _hasDestination;
 
-        private float _flipTimer;
-        private const float RandomFlipInterval = 3.5f;
+        public override void Enter(AIAgent a) => _hasDestination = false;
 
-        public override void Enter(AIAgent agent)
+        public override void FixedTick(AIAgent a)
         {
-            _flipTimer = 0f;
-        }
+            var m = (Ent_Mouse)a;
 
-        public override void FixedTick(AIAgent agent)
-        {
-            var m = (Ent_Mouse)agent;
-            m.UpdateGroundCheck();
-
-            if (!m.IsGrounded)
-            {
-                // Airborne (fell off ledge) — let gravity work, don't fight it
-                m.StopHorizontal();
-                return;
-            }
-
-            // Obstacle avoidance: flip on wall or platform edge
-            if (m.IsWallAhead() || m.IsEdgeAhead())
-            {
-                m.FaceDirection = -m.FaceDirection;
-                _flipTimer = 0f;
-            }
-
-            // Occasional random direction change so the path looks natural
-            _flipTimer += Time.fixedDeltaTime;
-            if (_flipTimer >= RandomFlipInterval)
-            {
-                _flipTimer = 0f;
-                if (Random.value < 0.35f)
-                    m.FaceDirection = -m.FaceDirection;
-            }
-
-            m.Rb.linearVelocity = new Vector2(m.FaceDirection * m.wanderSpeed, m.Rb.linearVelocity.y);
-
-            // Predator scan — single OverlapCircle is cheap enough to run every fixed frame
             if (m.TryDetectPredator(out Transform predator))
             {
                 m.Target = predator;
                 m.StateMachine.SetState(AIStateID.Flee);
+                return;
+            }
+
+            if (m.WanderPausing)
+            {
+                m.Rb.linearVelocity = new Vector2(0, m.Rb.linearVelocity.y);
+                if ((m.WanderPauseTimer += Time.fixedDeltaTime) >= m.WanderPauseDuration)
+                {
+                    m.WanderPausing = false;
+                    _hasDestination = false;
+                }
+                return;
+            }
+
+            if (!_hasDestination)
+            {
+                if (m.TryGetHorizontalWanderPoint(out Vector3 p))
+                {
+                    m.SetDestination(p);
+                    _hasDestination = true;
+                }
+                return;
+            }
+
+            m.FollowPath(m.wanderSpeed);
+
+            if (Vector2.Distance(m.transform.position, m._currentDestination) <= m.wanderArrivalDist)
+            {
+                m.WanderPausing = true;
+                m.WanderPauseTimer = 0f;
+                m.WanderPauseDuration = Random.Range(m.wanderPauseMin, m.wanderPauseMax);
             }
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    /// <summary>
-    /// Sprint in the opposite direction of the predator.
-    /// Flips on walls (ignores edges — panic mode).
-    /// Returns to Wander after fleeCooldown seconds with no predator detected.
-    /// </summary>
     private class MouseFleeState : AIState
     {
         public override AIStateID ID => AIStateID.Flee;
+        private float _safeTimer;
 
-        public override void Enter(AIAgent agent)
+        public override void Enter(AIAgent a) => _safeTimer = 0f;
+
+        public override void FixedTick(AIAgent a)
         {
-            var m = (Ent_Mouse)agent;
-            m.FleeTimer = 0f;
+            var m = (Ent_Mouse)a;
 
-            // Initial flee direction: directly away from predator
-            if (m.Target != null)
-                m.FaceDirection = -Mathf.Sign(m.Target.position.x - m.transform.position.x);
-        }
-
-        public override void FixedTick(AIAgent agent)
-        {
-            var m = (Ent_Mouse)agent;
-            m.UpdateGroundCheck();
-
-            // Wall flip even while panicking (can't pass through walls)
-            if (m.IsGrounded && m.IsWallAhead())
-                m.FaceDirection = -m.FaceDirection;
-
-            if (m.IsGrounded)
-                m.Rb.linearVelocity = new Vector2(m.FaceDirection * m.fleeSpeed, m.Rb.linearVelocity.y);
-
-            // Check if predator is still nearby
             if (m.TryDetectPredator(out Transform predator))
             {
-                // Still detected — reset cooldown and continuously update flee direction
-                m.FleeTimer  = 0f;
-                m.Target     = predator;
-                m.FaceDirection = -Mathf.Sign(predator.position.x - m.transform.position.x);
+                _safeTimer = 0f;
+                // Run away horizontally
+                float runDir = Mathf.Sign(m.transform.position.x - predator.position.x);
+                Vector3 fleeTarget = m.transform.position + new Vector3(runDir * 2f, 0, 0);
+                
+                if (NavMesh.SamplePosition(fleeTarget, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+                    m.SetDestination(hit.position);
+
+                m.FollowPath(m.fleeSpeed);
             }
             else
             {
-                // Predator out of range — count down to safety
-                m.FleeTimer += Time.fixedDeltaTime;
-                if (m.FleeTimer >= m.fleeCooldown)
-                {
-                    m.Target = null;
+                _safeTimer += Time.fixedDeltaTime;
+                if (_safeTimer >= m.fleeCooldown)
                     m.StateMachine.SetState(AIStateID.Wander);
-                }
             }
         }
     }
