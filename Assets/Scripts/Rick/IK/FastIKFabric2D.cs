@@ -29,6 +29,12 @@ namespace RicksonDevs.FastIK
         public int ChainLength = 2;
         public Transform Target;
 
+        [Header("Pole / Elbow Constraint")]
+        [Tooltip("When true, middle joints are biased toward the Pole transform (elbow / knee hint).")]
+        public bool IsElbowRequired = false;
+        [Tooltip("The pole target — place it where the elbow / knee should point.")]
+        public Transform Pole;
+
         [Header("Joint Constraints (index 0 = closest to root)")]
         [Tooltip("One entry per bone segment. Controls how much each joint can bend relative to its parent.")]
         public BoneConstraint[] Constraints;
@@ -169,6 +175,35 @@ namespace RicksonDevs.FastIK
                 }
             }
 
+            // Pole / elbow constraint — bias every middle joint toward the pole
+            if (IsElbowRequired && Pole != null && Positions.Length > 2)
+            {
+                Vector2 rootPos    = Positions[0];
+                Vector2 tipPos     = Positions[Positions.Length - 1];
+                Vector2 polePos    = GetPositionRootSpace(Pole);
+
+                Vector2 rootTipDir = (tipPos - rootPos);
+                float   rootTipLen = rootTipDir.magnitude;
+                if (rootTipLen > 0.0001f)
+                {
+                    rootTipDir /= rootTipLen;
+                    Vector2 perp    = new Vector2(-rootTipDir.y, rootTipDir.x);
+                    float   poleSide = Vector2.Dot(polePos - rootPos, perp);
+
+                    for (int i = 1; i < Positions.Length - 1; i++)
+                    {
+                        Vector2 toJoint = Positions[i] - rootPos;
+                        float   along   = Vector2.Dot(toJoint, rootTipDir);
+                        float   side    = Vector2.Dot(toJoint, perp);
+                        float   dist    = Mathf.Abs(side);
+
+                        // Snap to pole's side, preserving perpendicular distance
+                        float newSide = poleSide >= 0f ? dist : -dist;
+                        Positions[i] = rootPos + rootTipDir * along + perp * newSide;
+                    }
+                }
+            }
+
             // Apply positions and rotations
             for (int i = 0; i < Positions.Length; i++)
             {
@@ -238,6 +273,21 @@ namespace RicksonDevs.FastIK
                 Handles.color = Color.green;
                 Handles.DrawWireCube(Vector3.up * 0.5f, Vector3.one);
                 current = current.parent;
+            }
+
+            // Pole target hint
+            if (IsElbowRequired && Pole != null)
+            {
+                // Draw a line from the middle bone to the pole
+                var mid = transform;
+                int half = ChainLength / 2;
+                for (int i = 0; i < half && mid != null; i++) mid = mid.parent;
+                if (mid != null)
+                {
+                    Gizmos.color = Color.cyan;
+                    Gizmos.DrawLine(mid.position, Pole.position);
+                    Gizmos.DrawWireSphere(Pole.position, 0.05f);
+                }
             }
 #endif
         }
