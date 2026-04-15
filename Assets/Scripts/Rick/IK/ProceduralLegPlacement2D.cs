@@ -11,8 +11,10 @@ public class ProceduralLegPlacement2D : MonoBehaviour
     // ── Ground Detection ──────────────────────────────────────────────────
     [Header("Ground Detection")]
     public LayerMask solidLayer;
-    [Tooltip("The strength of gravity applied when the leg is not grounded.")]
-    public float gravityStrength = 9.81f;
+    [Tooltip("Offset from raycastOrigin that the foot aims for while airborne (e.g. (0, -0.3) hangs the leg down).")]
+    public Vector2 airRestOffset = new Vector2(0f, -0.3f);
+    [Tooltip("How fast the foot moves toward the air-rest position while not grounded.")]
+    public float airSnapSpeed = 8f;
     [Tooltip("Length of each of the 8 directional rays.")]
     public float rayLength = 0.8f;
 
@@ -133,9 +135,11 @@ public class ProceduralLegPlacement2D : MonoBehaviour
     }
     private void MoveIKTargetGravity()
     {
-            //Apply a fake gravity effect when not grounded by moving the IK target downward over time
-            if (ikTarget == null) return;
-            ikTarget.position += Vector3.down * gravityStrength * Time.deltaTime;
+        // While airborne, smoothly pull the foot to a rest position relative to the origin.
+        // This prevents the foot from drifting to a wild position that causes a flip on landing.
+        if (ikTarget == null) return;
+        Vector2 airTarget = OriginPos() + airRestOffset;
+        ikTarget.position = Vector2.MoveTowards(ikTarget.position, airTarget, airSnapSpeed * Time.deltaTime);
     }
 
     // ── Surface scan ─────────────────────────────────────────────────────

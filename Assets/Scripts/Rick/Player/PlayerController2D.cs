@@ -1,5 +1,7 @@
 using UnityEngine;
 
+public enum PlayerState { Normal, Water }
+
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController2D : MonoBehaviour
 {
@@ -21,6 +23,26 @@ public class PlayerController2D : MonoBehaviour
 
     [Tooltip("All Rigidbody2D bodies in the chain. The root RB is added automatically — list only the additional ones here.")]
     public Rigidbody2D[] bodyRigidbodies;
+
+    // ── Water ─────────────────────────────────────────────────────────────
+    [Header("Water")]
+    [Tooltip("Layer mask for water volumes.")]
+    public LayerMask waterLayer;
+
+    [Tooltip("Minimum ray hits against waterLayer before switching to Water state.")]
+    public int waterHitsRequired = 3;
+
+    [Tooltip("Gravity scale applied to all bodies while in water (near-zero = floaty).")]
+    public float waterGravity = 0.05f;
+
+    [Tooltip("Move force while in water (applied on both axes).")]
+    public float waterMoveForce = 8f;
+
+    [Tooltip("Max speed while in water.")]
+    public float waterMaxSpeed = 5f;
+
+    [Tooltip("Damping applied to all bodies while in water.")]
+    public float waterDamping = 3f;
 
     // ── Leg Root by Contact ───────────────────────────────────────────────
     [Header("Leg Root by Contact")]
@@ -60,6 +82,9 @@ public class PlayerController2D : MonoBehaviour
     [Header("Head")]
     public Transform Head;
 
+    [Tooltip("Sprite renderers that flip on the X axis when the player changes direction.")]
+    public SpriteRenderer[] flipSprites;
+
     [Tooltip("Max tilt angle (degrees) when moving fully up or down.")]
     public float maxHeadTilt   = 30f;
     public float headTiltSpeed = 6f;
@@ -78,6 +103,8 @@ public class PlayerController2D : MonoBehaviour
     // ── Private ───────────────────────────────────────────────────────────
     private Rigidbody2D _rb;
     [SerializeField] private InputReader _input;
+
+    private PlayerState _state = PlayerState.Normal;
 
     private bool    _isGrounded;
     private Vector2 _groundNormal = Vector2.up; // averaged normal of all active ray hits
@@ -123,10 +150,14 @@ public class PlayerController2D : MonoBehaviour
         ClampSpeeds();
         UpdateLimbs();
 
-        if (_jumpQueued)
+        if (_jumpQueued && _state == PlayerState.Normal)
         {
             _jumpQueued = false;
             DoJump(input);
+        }
+        else
+        {
+            _jumpQueued = false;
         }
     }
 
@@ -151,6 +182,13 @@ public class PlayerController2D : MonoBehaviour
 
     private void ApplyMovement(Vector2 input)
     {
+        if (_state == PlayerState.Water)
+        {
+            // Full 2D movement in water — both axes always active
+            _rb.AddForce(new Vector2(input.x, input.y) * waterMoveForce, ForceMode2D.Force);
+            return;
+        }
+
         _rb.AddForce((Vector2)transform.right * input.x * moveForce, ForceMode2D.Force);
         if (!_isGrounded) return;
         _rb.AddForce(Vector2.up * input.y * moveForce, ForceMode2D.Force);
@@ -176,6 +214,13 @@ public class PlayerController2D : MonoBehaviour
 
     private void ClampSpeeds()
     {
+        if (_state == PlayerState.Water)
+        {
+            if (_rb.linearVelocity.magnitude > waterMaxSpeed)
+                _rb.linearVelocity = _rb.linearVelocity.normalized * waterMaxSpeed;
+            return;
+        }
+
         if (IsJumping) return;
         if (!_isGrounded) return; // only clamp on ground — in air, let the player overspeed a bit for better jump arcs and midair control
         if (_rb.linearVelocity.magnitude > maxSpeed)
@@ -206,7 +251,33 @@ public class PlayerController2D : MonoBehaviour
 
     private void UpdateGravity()
     {
-        // During the lockout window after a jump: stay airborne, don't re-check
+        // ── Water detection ───────────────────────────────────────────────
+        int waterHits = 0;
+        foreach (var dir in _rayDirs)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(
+                transform.position, dir, groundCheckDistance, waterLayer);
+            if (hit.collider != null) waterHits++;
+        }
+        _state = waterHits >= waterHitsRequired ? PlayerState.Water : PlayerState.Normal;
+
+        // ── Water physics ─────────────────────────────────────────────────
+        if (_state == PlayerState.Water)
+        {
+            _isGrounded      = false;
+            _rb.gravityScale = waterGravity;
+            if (bodyRigidbodies != null)
+                foreach (var rb in bodyRigidbodies)
+                    if (rb != null)
+                    {
+                        rb.gravityScale   = waterGravity;
+                        rb.linearDamping  = waterDamping;
+                        rb.angularDamping = waterDamping;
+                    }
+            return;
+        }
+
+        // ── Normal: jump lockout window ───────────────────────────────────
         if (IsJumping)
         {
             _isGrounded      = false;
@@ -222,6 +293,7 @@ public class PlayerController2D : MonoBehaviour
             return;
         }
 
+        // ── Normal: ground detection ──────────────────────────────────────
         _isGrounded = false;
         Vector2 normalSum = Vector2.zero;
         int     hitCount  = 0;
@@ -260,14 +332,20 @@ public class PlayerController2D : MonoBehaviour
 
     public void SetOrientation(Vector2 input)
     {
-        if (Head == null) return;
-
-        // X: flip based on horizontal movement direction
-        float scaleX = Head.localScale.x;
-        if      (input.x < -0.05f) scaleX =  -1f;
-        else if (input.x >  0.05f) scaleX = 1f;
-
-        Head.localScale = new Vector3(scaleX, Head.localScale.y, 1f);
+        if (input.x < -0.05f)
+        {
+            if (Head != null) Head.localScale = new Vector3(-1f, Head.localScale.y, 1f);
+            if (flipSprites != null)
+                foreach (var sr in flipSprites)
+                    if (sr != null) sr.flipY = true;
+        }
+        else if (input.x > 0.05f)
+        {
+            if (Head != null) Head.localScale = new Vector3(1f, Head.localScale.y, 1f);
+            if (flipSprites != null)
+                foreach (var sr in flipSprites)
+                    if (sr != null) sr.flipY = false;
+        }
     }
 
     private void SetHeadRotation(Vector2 input)
@@ -275,7 +353,7 @@ public class PlayerController2D : MonoBehaviour
         if (Head == null) return;
 
         // Tilt toward the vertical input direction; returns to 0 when released
-        float targetAngle = -input.y * maxHeadTilt * Head.localScale.x; // flip tilt direction when facing left
+        float targetAngle = input.y * maxHeadTilt * Head.localScale.x; // flip tilt direction when facing left
         float angle = Mathf.LerpAngle(Head.localEulerAngles.z, targetAngle, Time.deltaTime * headTiltSpeed);
         //only roates when moving in any direction
         if (input.magnitude > 0.1f)
@@ -296,7 +374,10 @@ public class PlayerController2D : MonoBehaviour
         _distanceTraveled += moved;
         _lastPosition      = transform.position;
 
-        if (_distanceTraveled >= stepDistance)
+        // In water: step threshold is halved so limbs flow more actively
+        float threshold = _state == PlayerState.Water ? stepDistance * 0.5f : stepDistance;
+
+        if (_distanceTraveled >= threshold)
         {
             _distanceTraveled = 0f;
             TriggerNextStep();
@@ -317,7 +398,7 @@ public class PlayerController2D : MonoBehaviour
 
         limbs[_stepIndex].Step();
 
-        if (doubleStep)
+        if (doubleStep || _state == PlayerState.Water)
         {
             int partner = (_stepIndex + 1) % limbs.Length;
             if (limbs[partner] != null) limbs[partner].Step();
@@ -379,6 +460,7 @@ public class PlayerController2D : MonoBehaviour
     {
         foreach (var dir in _rayDirs)
         {
+            // Solid ground rays
             RaycastHit2D hit = Physics2D.Raycast(
                 transform.position, dir, groundCheckDistance, solidLayer);
             Gizmos.color = hit.collider != null ? Color.green : new Color(1f, 0f, 0f, 0.4f);
@@ -387,10 +469,29 @@ public class PlayerController2D : MonoBehaviour
                 (Vector2)transform.position + dir * groundCheckDistance);
             if (hit.collider != null)
                 Gizmos.DrawWireSphere(hit.point, 0.04f);
+
+            // Water rays
+            RaycastHit2D waterHit = Physics2D.Raycast(
+                transform.position, dir, groundCheckDistance, waterLayer);
+            if (waterHit.collider != null)
+            {
+                Gizmos.color = new Color(0f, 0.5f, 1f, 0.8f);
+                Gizmos.DrawWireSphere(waterHit.point, 0.05f);
+            }
         }
 
-        // Grounded state ring
-        Gizmos.color = Application.isPlaying && _isGrounded ? Color.cyan : Color.grey;
+        // State ring: cyan = grounded, blue = water, grey = airborne
+        if (Application.isPlaying)
+        {
+            if (_state == PlayerState.Water)
+                Gizmos.color = new Color(0f, 0.5f, 1f, 1f);
+            else
+                Gizmos.color = _isGrounded ? Color.cyan : Color.grey;
+        }
+        else
+        {
+            Gizmos.color = Color.grey;
+        }
         Gizmos.DrawWireSphere(transform.position, 0.12f);
 
         // Averaged ground normal → jump direction

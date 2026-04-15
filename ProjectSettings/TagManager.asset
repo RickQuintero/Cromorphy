@@ -13,8 +13,8 @@ TagManager:
   - UI
   - Player
   - Branches
-  - 
-  - 
+  - Depredator
+  - Pray
   - 
   - 
   - 
@@ -41,20 +41,26 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Background1
+  - name: Sky
     uniqueID: 3945967369
     locked: 0
-  - name: Background2
+  - name: Atmosphere
+    uniqueID: 947873051
+    locked: 0
+  - name: Branches
     uniqueID: 992718077
     locked: 0
-  - name: World_Center
+  - name: World_Center_GROUND
     uniqueID: 556058737
     locked: 0
-  - name: Front1
+  - name: Player
     uniqueID: 3507939141
     locked: 0
-  - name: Front2
+  - name: Front1
     uniqueID: 3016265655
+    locked: 0
+  - name: Front2
+    uniqueID: 1376789537
     locked: 0
   m_RenderingLayers:
   - Default
