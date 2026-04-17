@@ -62,15 +62,15 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BodyTransparency: 0.651
-    - _CausticOffsetSpeed: 0.2
+    - _BodyTransparency: 0.62
+    - _CausticOffsetSpeed: 0.7
     - _CausticPower: 8.09
     - _CausticScale: 5
     - _CausticStrength: 2.64
     - _DistortionOffsetSpeed: 1.24
     - _DistortionScale: 8.7
     - _DistortionStrength: -0.086
-    - _LineLength: 0.07
+    - _LineLength: 0.09
     m_Colors:
     - White: {r: 1, g: 1, b: 1, a: 1}
     - _BodyColor: {r: 0.30013663, g: 0.27328813, b: 0.61635214, a: 1}

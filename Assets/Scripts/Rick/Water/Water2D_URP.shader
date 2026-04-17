@@ -25,6 +25,7 @@ Shader "Custom/Water2D_URP"
         _Distortion2Strength("Strength 2",                  Range(0, 0.1))  = 0.014
         _Distortion2Speed   ("Speed 2",                     Range(0, 5))    = 0.75
         _Distortion2Scale   ("Scale 2",                     Range(0.5, 10)) = 5.5
+        _RefractionStrength ("Scene Refraction",            Range(0, 0.08)) = 0.02
 
         [Header(Body Color)]
         _ColorShallow       ("Color Shallow",               Color)          = (0.20, 0.65, 0.75, 0.85)
@@ -107,6 +108,12 @@ Shader "Custom/Water2D_URP"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+            // ─── Scene texture (injected by URP 2D Renderer — never in CBUFFER) ──
+            // Requires "Use Camera Sorting Layer Texture" enabled in Renderer2D asset.
+            // Set "Foremost Sorting Layer" to the layer just below your water.
+            TEXTURE2D(_CameraSortingLayerTexture);
+            SAMPLER(sampler_CameraSortingLayerTexture);
+
             // ─── Uniforms ───────────────────────────────────────────
             CBUFFER_START(UnityPerMaterial)
                 float  _TimeScale;
@@ -114,6 +121,7 @@ Shader "Custom/Water2D_URP"
 
                 float  _DistortionStrength,  _DistortionSpeed,  _DistortionScale;
                 float  _Distortion2Strength, _Distortion2Speed, _Distortion2Scale;
+                float  _RefractionStrength;
 
                 float4 _ColorShallow, _ColorDeep;
                 float  _DepthGradient, _DepthEdgeFade, _AlphaOverall;
@@ -257,12 +265,25 @@ Shader "Custom/Water2D_URP"
                 float d2 = ValueNoise(uv * _Distortion2Scale
                            + float2(-T * _Distortion2Speed * 0.8, T * _Distortion2Speed));
 
+                // Internal UV distortion (for caustics, foam, etc.)
                 float2 distOffset = float2(
                     (d1 - 0.5) * 2.0 * _DistortionStrength  + (d2 - 0.5) * 2.0 * _Distortion2Strength,
                     (d1 - 0.5) * _DistortionStrength * 0.5);
 
                 float2 duv  = uv  + distOffset;
                 float2 druv = ruv + distOffset * 0.4;
+
+                // ── SCENE REFRACTION (CameraSortingLayerTexture) ──────
+                // positionHCS.xy is the pixel position; divide by scaled res to get 0-1 screen UV.
+                float2 screenUV = IN.positionHCS.xy / _ScaledScreenParams.xy;
+                // Reuse d1/d2 noise but in raw (untiled) magnitude for screen-space offset.
+                float2 screenDistort = float2(
+                    (d1 - 0.5) * 2.0 + (d2 - 0.5) * 2.0,
+                    (d1 - 0.5));
+                float2 refractUV  = screenUV + screenDistort * _RefractionStrength;
+                float4 refracted  = SAMPLE_TEXTURE2D(_CameraSortingLayerTexture,
+                                                     sampler_CameraSortingLayerTexture,
+                                                     refractUV);
 
                 // ── [2] BODY COLOR & DEPTH ───────────────────────────
                 // UV.y == 0 → surface (shallow), UV.y == 1 → deep
@@ -356,11 +377,19 @@ Shader "Custom/Water2D_URP"
                 }
 
                 // ── FINAL ────────────────────────────────────────────
-                // Preserve vertex color tint (SpriteRenderer tint support)
+                // Vertex color tint (SpriteRenderer tint support)
                 col.rgb *= IN.color.rgb;
-                col.a   *= _AlphaOverall * IN.color.a;
-                col.a    = saturate(col.a);
-                col.rgb  = min(col.rgb, 1.5);  // soft HDR headroom for bloom
+
+                // Water alpha: depth gradient * overall fade * vertex alpha
+                float waterAlpha = saturate(col.a * _AlphaOverall * IN.color.a);
+
+                // Composite: water color over the refracted (distorted) scene behind it.
+                // Using waterAlpha for both the lerp and the output alpha so:
+                //   - sprites BELOW the water sorting layer → show through distorted via the lerp
+                //   - sprites ABOVE the water sorting layer → render after us and composite normally
+                col.rgb = lerp(refracted.rgb, col.rgb, waterAlpha);
+                col.rgb = min(col.rgb, 1.5);   // soft HDR headroom for bloom
+                col.a   = waterAlpha;
 
                 return col;
             }

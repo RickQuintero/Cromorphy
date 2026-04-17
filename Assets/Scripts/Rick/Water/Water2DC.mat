@@ -15,6 +15,9 @@ Material:
   m_InvalidKeywords:
   - _CAUSTICSENABLED_ON
   - _FOAMENABLED_ON
+  - _LINEENABLED_ON
+  - _REFLECTIONENABLED_ON
+  - _SPECULARENABLED_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 1
@@ -27,55 +30,56 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _AlphaOverall: 0.595
-    - _CausticsDepthFall: 5.68
+    - _AlphaOverall: 0.39
+    - _CausticsDepthFall: 3.25
     - _CausticsEnabled: 1
-    - _CausticsScale: 15.4
-    - _CausticsSpeed: 0.02
-    - _CausticsStrength: 1.5
-    - _DepthEdgeFade: 0.013
-    - _DepthGradient: 0.633
-    - _Distortion2Scale: 1.63
-    - _Distortion2Speed: 0.4
-    - _Distortion2Strength: 0.0105
-    - _DistortionScale: 1.22
-    - _DistortionSpeed: 0.43
-    - _DistortionStrength: 0.0086
-    - _FoamAlpha: 0.6
+    - _CausticsScale: 25
+    - _CausticsSpeed: 0.005
+    - _CausticsStrength: 0.59
+    - _DepthEdgeFade: 0.102
+    - _DepthGradient: 0.47
+    - _Distortion2Scale: 5
+    - _Distortion2Speed: 2.17
+    - _Distortion2Strength: 0.064
+    - _DistortionScale: 7.5
+    - _DistortionSpeed: 3.41
+    - _DistortionStrength: 0.064
+    - _FoamAlpha: 0.2
     - _FoamDensity: 0.55
     - _FoamEnabled: 1
-    - _FoamFeather: 0.039
-    - _FoamPosition: 0
-    - _FoamScale: 6
-    - _FoamSpeed: 0.6
+    - _FoamFeather: 0
+    - _FoamPosition: 0.029
+    - _FoamScale: 18
+    - _FoamSpeed: 0.1
     - _FresnelPower: 2.5
     - _FresnelStrength: 0.3
-    - _LightDirX: 0.5
+    - _LightDirX: -0.43
     - _LightDirY: -1
-    - _LineEnabled: 0
-    - _LineFeather: 0
-    - _LinePosition: 0
-    - _LineThickness: 0.0252
+    - _LineEnabled: 1
+    - _LineFeather: 0.091
+    - _LinePosition: 0.058
+    - _LineThickness: 0.1
     - _LineWaveAmp: 0.012
     - _LineWaveFreq: 6
     - _LineWaveSpeed: 1.5
-    - _ReflectionEnabled: 0
+    - _ReflectionEnabled: 1
     - _ReflectionScale: 4
     - _ReflectionSpeed: 0.25
     - _ReflectionStrength: 0.18
+    - _RefractionStrength: 0
     - _ShimmerAlpha: 0.286
-    - _ShimmerOffset: 0
-    - _ShimmerThickness: 0
-    - _SpecularEnabled: 0
+    - _ShimmerOffset: 0.042
+    - _ShimmerThickness: 0.0493
+    - _SpecularEnabled: 1
     - _SpecularShininess: 40
     - _SpecularStrength: 0.5
-    - _TimeScale: 1.74
-    - _UVTileX: 2.63
-    - _UVTileY: 2.54
+    - _TimeScale: 1.96
+    - _UVTileX: 2.71
+    - _UVTileY: 3.22
     m_Colors:
-    - _CausticsColor: {r: 0.3027767, g: 0.509434, b: 0.48438466, a: 0.11764706}
-    - _ColorDeep: {r: 0.02, g: 0.17999992, b: 0.37999988, a: 0}
-    - _ColorShallow: {r: 0.19999993, g: 0.65, b: 0.75, a: 0.27058825}
+    - _CausticsColor: {r: 0.30277663, g: 0.509434, b: 0.48438466, a: 0.92156863}
+    - _ColorDeep: {r: 0.02, g: 0.17999989, b: 0.37999985, a: 0.6431373}
+    - _ColorShallow: {r: 0.53333336, g: 0.5294118, b: 0.54901963, a: 0.58431375}
     - _FoamColor: {r: 1, g: 1, b: 1, a: 0}
     - _LineColor: {r: 0.14117648, g: 0.32941177, b: 0.3019608, a: 1}
     - _ReflectionColor: {r: 0.6, g: 0.8, b: 1, a: 1}
