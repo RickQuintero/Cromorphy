@@ -95,6 +95,8 @@ public class PlayerController2D : MonoBehaviour
     public float stepDistance = 0.3f;
     public bool  doubleStep   = false;
 
+    public void SetGrassSpeedMultiplier(float multiplier) => _grassSpeedMultiplier = multiplier;
+
     // ── Step Sound ────────────────────────────────────────────────────────
     [Header("Step Sound")]
     public AudioSource stepAudio;
@@ -114,6 +116,8 @@ public class PlayerController2D : MonoBehaviour
 
     // True during the lockout window right after a jump fires
     private bool IsJumping => Time.time < _jumpTime + jumpLockoutDuration;
+
+    private float   _grassSpeedMultiplier = 1f;
 
     private Vector2 _lastPosition;
     private float   _distanceTraveled;
@@ -223,8 +227,9 @@ public class PlayerController2D : MonoBehaviour
 
         if (IsJumping) return;
         if (!_isGrounded) return; // only clamp on ground — in air, let the player overspeed a bit for better jump arcs and midair control
-        if (_rb.linearVelocity.magnitude > maxSpeed)
-            _rb.linearVelocity = _rb.linearVelocity.normalized * maxSpeed;
+        float effectiveMaxSpeed = maxSpeed * _grassSpeedMultiplier;
+        if (_rb.linearVelocity.magnitude > effectiveMaxSpeed)
+            _rb.linearVelocity = _rb.linearVelocity.normalized * effectiveMaxSpeed;
     }
 
     // ── Jump ──────────────────────────────────────────────────────────────

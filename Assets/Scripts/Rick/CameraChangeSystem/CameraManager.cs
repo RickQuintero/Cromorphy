@@ -36,7 +36,7 @@ public class CameraManager : MonoBehaviour
     public void SetActiveCamera(Camera target)
     {
         ResetAllCameras();
-        Debug.Log($"Activating camera: {target.name}");
+        //Debug.Log($"Activating camera: {target.name}");
         target.enabled = true;
     }
 
