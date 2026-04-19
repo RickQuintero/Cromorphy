@@ -21,6 +21,12 @@ public class PlayerController2D : MonoBehaviour
     [Tooltip("Seconds after jumping during which ground-check is suppressed and braking is skipped.")]
     public float jumpLockoutDuration = 0.25f;
 
+    [Tooltip("Seconds after leaving the ground the player can still jump (prevents missed jumps at edges).")]
+    public float coyoteTime = 0.12f;
+
+    [Tooltip("Seconds a jump press is remembered before landing (jump early, executes on touch).")]
+    public float jumpBufferTime = 0.12f;
+
     [Tooltip("All Rigidbody2D bodies in the chain. The root RB is added automatically — list only the additional ones here.")]
     public Rigidbody2D[] bodyRigidbodies;
 
@@ -109,10 +115,12 @@ public class PlayerController2D : MonoBehaviour
     private PlayerState _state = PlayerState.Normal;
 
     private bool    _isGrounded;
-    private Vector2 _groundNormal = Vector2.up; // averaged normal of all active ray hits
+    private Vector2 _groundNormal = Vector2.up;
     private bool  _jumpQueued;
     private bool  _jumpConsumed;
-    private float _jumpTime = -999f;
+    private float _jumpTime        = -999f;
+    private float _lastGroundedTime = -999f;  // coyote time
+    private float _jumpPressedTime  = -999f;  // jump buffer
 
     // True during the lockout window right after a jump fires
     private bool IsJumping => Time.time < _jumpTime + jumpLockoutDuration;
@@ -169,11 +177,19 @@ public class PlayerController2D : MonoBehaviour
     {
         Vector2 input = _input != null ? _input.MoveInput : Vector2.zero;
 
-        bool wantJump = _input != null && _input.JumpHeld;
-        if (wantJump && _isGrounded && !_jumpConsumed && !IsJumping)
+        if (_input != null)
+        {
+            // Record exact frame the button was pressed for jump buffering
+            if (_input.JumpDown) _jumpPressedTime = Time.time;
+            if (!_input.JumpHeld) _jumpConsumed = false;
+        }
+
+        // Coyote time: allow jumping briefly after walking off a ledge
+        // Jump buffer: honour a press made slightly before landing
+        bool canJump       = Time.time - _lastGroundedTime <= coyoteTime && !IsJumping;
+        bool bufferedJump  = Time.time - _jumpPressedTime  <= jumpBufferTime;
+        if (canJump && bufferedJump && !_jumpConsumed)
             _jumpQueued = true;
-        if (!wantJump)
-            _jumpConsumed = false;
 
         SetOrientation(input);
         SetHeadRotation(input);
@@ -193,8 +209,10 @@ public class PlayerController2D : MonoBehaviour
             return;
         }
 
-        _rb.AddForce((Vector2)transform.right * input.x * moveForce, ForceMode2D.Force);
+        // No movement force while airborne — horizontal included
         if (!_isGrounded) return;
+
+        _rb.AddForce((Vector2)transform.right * input.x * moveForce, ForceMode2D.Force);
         _rb.AddForce(Vector2.up * input.y * moveForce, ForceMode2D.Force);
     }
 
@@ -236,10 +254,11 @@ public class PlayerController2D : MonoBehaviour
 
     private void DoJump(Vector2 input)
     {
-        if (!_isGrounded) return;
-
-        _jumpTime     = Time.time;
-        _jumpConsumed = true;
+        // No _isGrounded check here — coyote + buffer logic in Update already gates this
+        _jumpTime        = Time.time;
+        _jumpConsumed    = true;
+        _jumpPressedTime = -999f;   // consume the buffer so it can't re-fire on landing
+        _lastGroundedTime = -999f;  // consume coyote time so it can't double-jump
 
         // Jump in the input direction; fall back to the surface normal when no input is held.
         Vector2 dir     = input.sqrMagnitude > 0.01f ? input.normalized : _groundNormal;
@@ -317,7 +336,10 @@ public class PlayerController2D : MonoBehaviour
 
         // Average all hit normals → jump pushes away from every touched surface
         if (hitCount > 0)
-            _groundNormal = normalSum.normalized;
+        {
+            _groundNormal     = normalSum.normalized;
+            _lastGroundedTime = Time.time;   // feed coyote timer
+        }
 
         // Grounded = gravityScale 0 (stick to surface). Airborne = 1 (normal Unity gravity).
         float gravity = _isGrounded ? 0f : 1f;

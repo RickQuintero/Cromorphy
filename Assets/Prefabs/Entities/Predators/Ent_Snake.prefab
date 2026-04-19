@@ -479,6 +479,7 @@ GameObject:
   - component: {fileID: 7175150132528481320}
   - component: {fileID: 9160010462884023480}
   - component: {fileID: 788887105473720726}
+  - component: {fileID: 2867311891815071975}
   m_Layer: 8
   m_Name: Ent_Snake
   m_TagString: Untagged
@@ -630,6 +631,18 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &2867311891815071975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1517425540150844627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12e9e4f0c15815f43b66fca397ccd5a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityPoolMember
 --- !u!1 &1844681501741555244
 GameObject:
   m_ObjectHideFlags: 0

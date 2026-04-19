@@ -33,12 +33,16 @@ using UnityEngine.InputSystem;
         private const string ACTION_CROUCH = "Crouch";
         private const string ACTION_ATTACK = "Attack";
 
+        private const string ACTION_AIM = "RightClick";
+
         // ── Cached InputAction references ──────────────────────────────────────
         // Caching avoids dictionary lookup overhead on every ReadValue call.
         private InputAction _moveAction;
         private InputAction _jumpAction;
         private InputAction _crouchAction;
         private InputAction _attackAction;
+
+        private InputAction _aimAction;
 
         // ── Polled values (public, read-only properties) ───────────────────────
 
@@ -60,6 +64,15 @@ using UnityEngine.InputSystem;
         /// <summary>True only in the frame attack was pressed.</summary>
         public bool AttackDown     { get; private set; }
 
+        /// <summary>True only in the frame aim (right-click) was pressed.</summary>
+        public bool AimDown        { get; private set; }
+
+        /// <summary>True while aim is held.</summary>
+        public bool AimHeld        { get; private set; }
+
+        /// <summary>True in the frame aim was released.</summary>
+        public bool AimUp          { get; private set; }
+
         // ── Raw direction helpers ──────────────────────────────────────────────
 
         public float Horizontal => MoveInput.x;
@@ -78,6 +91,7 @@ using UnityEngine.InputSystem;
             _jumpAction   = playerInput.actions[ACTION_JUMP];
             _crouchAction = playerInput.actions[ACTION_CROUCH];
             _attackAction = playerInput.actions[ACTION_ATTACK];
+            _aimAction    = playerInput.actions[ACTION_AIM];
         }
 
         private void Update()
@@ -92,6 +106,9 @@ using UnityEngine.InputSystem;
             JumpUp     = _jumpAction.WasReleasedThisFrame();
             CrouchHeld = _crouchAction.IsPressed();
             AttackDown = _attackAction.WasPressedThisFrame();
+            AimDown    = _aimAction.WasPressedThisFrame();
+            AimHeld    = _aimAction.IsPressed();
+            AimUp      = _aimAction.WasReleasedThisFrame();
         }
     }
 

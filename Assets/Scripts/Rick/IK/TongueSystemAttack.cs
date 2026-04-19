@@ -1,150 +1,299 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class LegIk2D : MonoBehaviour {
+public class TongueSystemAttack : MonoBehaviour
+{
+    [Header("Tongue Shape")]
+    [SerializeField] private float    segmentLength   = 0.15f;
+    [SerializeField] private float    maxRange        = 4f;
+    [SerializeField] private float    minThickness    = 0.03f;
+    [SerializeField] private float    maxThickness    = 0.14f;
+    [SerializeField] private Sprite   segmentSprite;
+    [SerializeField] private Material segmentMaterial;
+    [SerializeField] private string   sortingLayerName = "Default";
+    [SerializeField] private int      sortingOrder    = 5;
 
-    public Transform ikTarget;
+    [Header("Tongue Motion")]
+    [SerializeField] private float launchSpeed     = 14f;
+    [SerializeField] private float retractSpeed    = 9f;
+    [SerializeField] private float holdDuration    = 0.25f;
+    [SerializeField] private float wiggleFrequency = 10f;
+    [SerializeField] private float wiggleAmplitude = 0.06f;
 
-    public enum IkType {
-        Iterative,
-        Continuous
-    }
+    [Header("Charge")]
+    [SerializeField] private float chargeTime = 1.2f;  // hold duration before auto-launch
 
-    [Header("IK Data")]
-    public bool isMounted = false;
-    public IkType ikType;
-    [Tooltip("Only Used If IkType is Iterative")] public int iterations = 4;
+    [Header("Detection")]
+    [SerializeField] private LayerMask preyMask;
+    [SerializeField] private LayerMask groundMask;     // fallback surface layer
 
-    [Header("Segment Data")]
-    public int segmentCount = 4;
-    public float segmentLength = 1f;
-    public float minThickness = 0.01f;
-    public float maxThickness = 0.1f;
+    [Header("References")]
+    [Tooltip("Child of this transform — starts at origin, flies to prey.")]
+    public  Transform   ikTarget;
+    [Tooltip("Child circle sprite — will be scaled from 0 to maxRange*2 while charging.")]
+    [SerializeField] private Transform   rangeIndicator;
+    [SerializeField] private InputReader _input;
+    [Tooltip("Animator that receives IsAttacking bool (mouth open/close animation).")]
+    [SerializeField] private Animator    _mouthAnimator;
 
-    // In 2D we use sprites instead of meshes
-    public Sprite segmentSprite;
-    public Material segmentMaterial;
+    // ── State ─────────────────────────────────────────────────────────────────
+    private enum State { Idle, Charging, Launching, HoldingPrey, Retracting }
+    private State _state = State.Idle;
 
-    public Segment[] segments;
-    public Vector2 offset;
-    public bool HasPhysics = false;
+    private Segment[] _segments;
+    private int       _maxSegments;
+    private Vector3   _launchDestination;
+    private float     _holdTimer;
+    private float     _chargeTimer;
 
-    void Start() {
-        segments = new Segment[segmentCount];
-        for (int i = 0; i < segmentCount; i++) {
-            GameObject go = new GameObject("Segment " + i);
-            go.transform.parent = transform;
-            Transform t = go.transform;
+    // ── Setup ─────────────────────────────────────────────────────────────────
+    void Awake()
+    {
+        _maxSegments = Mathf.CeilToInt(maxRange / segmentLength) + 2;
+        _segments    = new Segment[_maxSegments];
 
-            SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-            if (segmentSprite != null) sr.sprite = segmentSprite;
+        for (int i = 0; i < _maxSegments; i++)
+        {
+            var go = new GameObject("TongSeg_" + i);
+            go.transform.SetParent(transform);
+
+            var sr          = go.AddComponent<SpriteRenderer>();
+            sr.sprite            = segmentSprite;
+            sr.sortingLayerName  = sortingLayerName;
+            sr.sortingOrder      = sortingOrder;
             if (segmentMaterial != null) sr.material = segmentMaterial;
 
-            if (HasPhysics) {
-                go.AddComponent<BoxCollider2D>();
-                Rigidbody2D rb = go.AddComponent<Rigidbody2D>();
-                rb.gravityScale = 0f; // Disable gravity on segments by default
+            go.SetActive(false);
+            _segments[i] = new Segment(go.transform, segmentLength);
+        }
+
+        if (rangeIndicator != null) rangeIndicator.gameObject.SetActive(false);
+        if (ikTarget       != null) ikTarget.position = transform.position;
+    }
+
+    // ── Loop ──────────────────────────────────────────────────────────────────
+    void Update()
+    {
+        HandleInput();
+        UpdateState();
+        UpdateIK();
+    }
+
+    // ── Input ─────────────────────────────────────────────────────────────────
+    void HandleInput()
+    {
+        // Start charging on Aim press
+        if (_input.AimDown && _state == State.Idle)
+        {
+            _state       = State.Charging;
+            _chargeTimer = 0f;
+            if (rangeIndicator != null) rangeIndicator.gameObject.SetActive(true);
+        }
+
+        // Release before full charge → cancel
+        if (_input.AimUp && _state == State.Charging)
+            ReturnToIdle();
+    }
+
+    // ── State machine ─────────────────────────────────────────────────────────
+    void UpdateState()
+    {
+        switch (_state)
+        {
+            case State.Charging:
+            {
+                _chargeTimer += Time.deltaTime;
+                float t = Mathf.Clamp01(_chargeTimer / chargeTime);
+
+                // Grow the range indicator from 0 to maxRange*2
+                if (rangeIndicator != null)
+                {
+                    float d = maxRange * 2f * t;
+                    rangeIndicator.localScale = new Vector3(d, d, 1f);
+                }
+
+                if (t >= 1f) Launch();
+                break;
             }
 
-            float st = Mathf.Lerp(minThickness, maxThickness, i / (float)segmentCount);
-            // In 2D: X = length (along right axis), Y = thickness
-            t.localScale = new Vector3(segmentLength, st, 1f);
+            case State.Launching:
+            {
+                // Auto-retract if player moves out of range mid-flight
+                if (Vector3.Distance(transform.position, ikTarget.position) > maxRange * 1.25f)
+                { _state = State.Retracting; break; }
 
-            Segment s = new Segment(t, segmentLength);
-            segments[i] = s;
-        }
-    }
+                ikTarget.position = Vector3.MoveTowards(
+                    ikTarget.position, _launchDestination, launchSpeed * Time.deltaTime);
 
-    void Update() {
-        switch (ikType) {
-            case IkType.Continuous:
-                ContinuousIK();
+                if (Vector3.Distance(ikTarget.position, _launchDestination) < 0.05f)
+                {
+                    ikTarget.position = _launchDestination;
+                    _holdTimer        = 0f;
+                    _state            = State.HoldingPrey;
+                }
                 break;
-            case IkType.Iterative:
-                IterativeIK();
-                break;
-            default:
-                Debug.LogError("IKType Behaviour Not Defined");
-                break;
-        }
-    }
-
-    public void IterativeIK() {
-        for (int s = 0; s < segmentCount; s++) {
-            // Place segments along the right axis instead of forward
-            segments[s].position = (Vector3)((Vector2)transform.position + Vector2.right * s * segmentLength);
-        }
-        for (int i = 0; i < iterations; i++) {
-            segments[segmentCount - 1].AdjustTo(ikTarget.position);
-            for (int s = segmentCount - 2; s >= 0; s--) {
-                segments[s].AdjustTo(segments[s + 1].tail);
             }
-            if (isMounted) Remount();
+
+            case State.HoldingPrey:
+            {
+                _holdTimer += Time.deltaTime;
+                if (_holdTimer >= holdDuration) _state = State.Retracting;
+                break;
+            }
+
+            case State.Retracting:
+            {
+                ikTarget.position = Vector3.MoveTowards(
+                    ikTarget.position, transform.position, retractSpeed * Time.deltaTime);
+
+                if (Vector3.Distance(ikTarget.position, transform.position) < 0.05f)
+                {
+                    ikTarget.position = transform.position;
+                    ReturnToIdle();
+                }
+                break;
+            }
         }
     }
 
-    public void ContinuousIK() {
-        segments[segmentCount - 1].AdjustTo(ikTarget.position);
-        for (int s = segmentCount - 2; s >= 0; s--) {
-            segments[s].AdjustTo(segments[s + 1].tail - (Vector3)offset);
+    // ── Launch logic ──────────────────────────────────────────────────────────
+    void Launch()
+    {
+        // 1 — try to find nearest prey
+        Collider2D[] preyHits = Physics2D.OverlapCircleAll(transform.position, maxRange, preyMask);
+        if (preyHits.Length > 0)
+        {
+            Collider2D nearest     = preyHits[0];
+            float      nearestDist = Vector2.Distance(transform.position, nearest.transform.position);
+            for (int i = 1; i < preyHits.Length; i++)
+            {
+                float d = Vector2.Distance(transform.position, preyHits[i].transform.position);
+                if (d < nearestDist) { nearestDist = d; nearest = preyHits[i]; }
+            }
+            _launchDestination = nearest.transform.position;
+            _state = State.Launching;
+            SetAttacking(true);
+            return;
         }
-        if (isMounted) Remount();
+
+        // 2 — fallback: cast 16 rays outward, pick the farthest ground point
+        Vector3 farthestPoint = transform.position;
+        float   farthestDist  = 0f;
+        const int fallbackRays = 16;
+        for (int i = 0; i < fallbackRays; i++)
+        {
+            float        angle = i * Mathf.PI * 2f / fallbackRays;
+            Vector2      dir   = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            RaycastHit2D hit   = Physics2D.Raycast(transform.position, dir, maxRange, groundMask);
+            if (hit.collider != null && hit.distance > farthestDist)
+            {
+                farthestDist  = hit.distance;
+                farthestPoint = hit.point;
+            }
+        }
+
+        if (farthestDist < 0.1f) { ReturnToIdle(); return; } // nothing in range at all
+
+        _launchDestination = farthestPoint;
+        _state = State.Launching;
+        SetAttacking(true);
     }
 
-    public void Remount() {
-        segments[0].tail = transform.position;
-        for (int i = 1; i < segmentCount; i++) {
-            segments[i].tail = segments[i - 1].head;
+    void SetAttacking(bool attacking)
+    {
+        if (_mouthAnimator != null)
+            _mouthAnimator.SetBool("IsAttacking", attacking);
+    }
+
+    void ReturnToIdle()
+    {
+        _state       = State.Idle;
+        _chargeTimer = 0f;
+        if (rangeIndicator != null)
+        {
+            rangeIndicator.localScale = Vector3.zero;
+            rangeIndicator.gameObject.SetActive(false);
+        }
+        SetAttacking(false);
+    }
+
+    // ── IK visual ─────────────────────────────────────────────────────────────
+    void UpdateIK()
+    {
+        Vector3 root = transform.position;
+        Vector3 tip  = ikTarget.position;
+        float   dist = Vector3.Distance(root, tip);
+
+        if (dist < 0.01f)
+        {
+            for (int i = 0; i < _maxSegments; i++)
+                _segments[i].transform.gameObject.SetActive(false);
+            return;
+        }
+
+        int     needed = Mathf.Clamp(Mathf.CeilToInt(dist / segmentLength), 1, _maxSegments);
+        Vector2 dir    = ((Vector2)(tip - root)).normalized;
+        Vector2 perp   = new Vector2(-dir.y, dir.x);
+
+        for (int i = 0; i < _maxSegments; i++)
+            _segments[i].transform.gameObject.SetActive(i < needed);
+
+        for (int i = 0; i < needed; i++)
+        {
+            float t        = (i + 0.5f) / needed;
+            float envelope = Mathf.Sin(t * Mathf.PI);
+            float wiggle   = Mathf.Sin(Time.time * wiggleFrequency - i * 1.2f)
+                           * wiggleAmplitude * envelope;
+
+            Vector3 basePos       = Vector3.Lerp(root, tip, t);
+            _segments[i].position = basePos + (Vector3)(perp * wiggle);
+
+            Vector3 lookTarget;
+            if (i < needed - 1)
+            {
+                float   tN   = (i + 1.5f) / needed;
+                float   envN = Mathf.Sin(tN * Mathf.PI);
+                float   wN   = Mathf.Sin(Time.time * wiggleFrequency - (i + 1) * 1.2f)
+                             * wiggleAmplitude * envN;
+                lookTarget = Vector3.Lerp(root, tip, tN) + (Vector3)(perp * wN);
+            }
+            else
+            {
+                lookTarget = tip;
+            }
+            _segments[i].LookAt(lookTarget);
+
+            float thickness = Mathf.Lerp(maxThickness, minThickness, (float)i / Mathf.Max(needed - 1, 1));
+            _segments[i].transform.localScale = new Vector3(segmentLength * 1.1f, thickness, 1f);
         }
     }
 
+    // ── Gizmo ─────────────────────────────────────────────────────────────────
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.25f);
+        Gizmos.DrawWireSphere(transform.position, maxRange);
+    }
+
+    // ── Segment ───────────────────────────────────────────────────────────────
     [System.Serializable]
-    public class Segment {
+    public class Segment
+    {
         public Transform transform;
+        public float     length;
 
-        public Vector3 position {
-            get { return transform.position; }
-            set { transform.position = value; }
+        public Vector3 position
+        {
+            get => transform.position;
+            set => transform.position = value;
         }
 
-        // In 2D, segments extend along their local right axis
-        public Vector3 head {
-            get { return transform.position + transform.right * halfLength; }
-            set { transform.position = value - transform.right * halfLength; }
-        }
+        public Segment(Transform t, float l) { transform = t; length = l; }
 
-        public Vector3 tail {
-            get { return transform.position - transform.right * halfLength; }
-            set { transform.position = value + transform.right * halfLength; }
-        }
-
-        public float halfLength {
-            get { return length * 0.5f; }
-            set { length = value * 2f; }
-        }
-
-        float length;
-
-        public Segment(Transform t, float l) {
-            transform = t;
-            length = l;
-        }
-
-        public void AdjustTo(Vector3 p) {
-            LookAt(p);
-            MoveTo(p);
-        }
-
-        // Rotate around Z axis to face the target in 2D
-        public void LookAt(Vector3 p) {
-            Vector2 dir = (Vector2)(p - position);
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        public void LookAt(Vector3 p)
+        {
+            Vector2 dir   = (Vector2)(p - transform.position);
+            float   angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
-        }
-
-        public void MoveTo(Vector3 p) {
-            head = p;
         }
     }
 }
