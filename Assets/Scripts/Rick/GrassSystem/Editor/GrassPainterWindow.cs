@@ -223,8 +223,8 @@ public class GrassPainterWindow : EditorWindow
         EditorGUILayout.Separator();
 
         EditorGUILayout.LabelField("Width and Length ", EditorStyles.boldLabel);
-        toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 2f);
-        toolSettings.sizeLength = EditorGUILayout.Slider("Grass Length", toolSettings.sizeLength, 0.01f, 2f);
+        toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 20f);
+        toolSettings.sizeLength = EditorGUILayout.Slider("Grass Length", toolSettings.sizeLength, 0.01f, 20f);
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("Color", EditorStyles.boldLabel);
         toolSettings.AdjustedColor = EditorGUILayout.ColorField("Brush Color", toolSettings.AdjustedColor);
@@ -249,8 +249,8 @@ public class GrassPainterWindow : EditorWindow
 
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("Width and Length ", EditorStyles.boldLabel);
-        toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 2f);
-        toolSettings.sizeLength = EditorGUILayout.Slider("Grass Length", toolSettings.sizeLength, 0.01f, 2f);
+        toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 20f);
+        toolSettings.sizeLength = EditorGUILayout.Slider("Grass Length", toolSettings.sizeLength, 0.01f, 20f);
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("Color", EditorStyles.boldLabel);
         toolSettings.AdjustedColor = EditorGUILayout.ColorField("Brush Color", toolSettings.AdjustedColor);
@@ -362,8 +362,8 @@ public class GrassPainterWindow : EditorWindow
             toolSettings.adjustWidth = EditorGUILayout.Slider("Grass Width Adjustment", toolSettings.adjustWidth, -1f, 1f);
             toolSettings.adjustLength = EditorGUILayout.Slider("Grass Length Adjustment", toolSettings.adjustLength, -1f, 1f);
 
-            toolSettings.adjustWidthMax = EditorGUILayout.Slider("Grass Width Adjustment Max Clamp", toolSettings.adjustWidthMax, 0.01f, 3f);
-            toolSettings.adjustHeightMax = EditorGUILayout.Slider("Grass Length Adjustment Max Clamp", toolSettings.adjustHeightMax, 0.01f, 3f);
+            toolSettings.adjustWidthMax = EditorGUILayout.Slider("Grass Width Adjustment Max Clamp", toolSettings.adjustWidthMax, 0.01f, 20f);
+            toolSettings.adjustHeightMax = EditorGUILayout.Slider("Grass Length Adjustment Max Clamp", toolSettings.adjustHeightMax, 0.01f, 20f);
             EditorGUILayout.Separator();
         }
 
@@ -374,8 +374,8 @@ public class GrassPainterWindow : EditorWindow
             if (toolbarInt == 0)
             {
                 EditorGUILayout.LabelField("Width and Length ", EditorStyles.boldLabel);
-                toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 2f);
-                toolSettings.sizeLength = EditorGUILayout.Slider("Grass Length", toolSettings.sizeLength, 0.01f, 2f);
+                toolSettings.sizeWidth = EditorGUILayout.Slider("Grass Width", toolSettings.sizeWidth, 0.01f, 20f);
+                toolSettings.sizeLength = EditorGUILayout.Slider("Grass Length", toolSettings.sizeLength, 0.01f, 20f);
             }
 
 
@@ -488,11 +488,29 @@ public class GrassPainterWindow : EditorWindow
         DrawHandles();
     }
 
+    // Finds the nearest surface in 8 compass directions from a 2D point.
+    static RaycastHit2D NearestSurfaceHit(Vector2 origin, float castDist, int layerMask)
+    {
+        RaycastHit2D best = default;
+        float bestDist = float.MaxValue;
+        for (int d = 0; d < 8; d++)
+        {
+            float angle = d * Mathf.PI * 0.25f;
+            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            RaycastHit2D hit = Physics2D.Raycast(origin, dir, castDist, layerMask);
+            if (hit.collider != null && hit.distance < bestDist)
+            {
+                bestDist = hit.distance;
+                best = hit;
+            }
+        }
+        return best;
+    }
+
     // draw the painter handles
     void DrawHandles()
     {
         // Always project to Z=0 so the disc follows the mouse even over empty space.
-        // In 2D the scene camera looks along +Z, so t = -origin.z / dir.z gives Z=0.
         Vector3 brushCenter = hitPos;
         if (Mathf.Abs(ray.direction.z) > 0.001f)
         {
@@ -504,11 +522,9 @@ public class GrassPainterWindow : EditorWindow
             }
         }
 
-        // Snap to the nearest surface by casting straight down from the brush centre.
-        // A horizontal dir2D-based raycast can't work here: in an orthographic 2D
-        // scene the camera looks along +Z, so dir2D ≈ (0,0) after flattening.
-        Vector2      bc2D   = new Vector2(brushCenter.x, brushCenter.y);
-        RaycastHit2D hit2D  = Physics2D.Raycast(bc2D + Vector2.up * 10f, Vector2.down, 20f, toolSettings.hitMask.value);
+        // Snap to nearest surface in any direction (floor, wall, ceiling, diagonal).
+        Vector2      bc2D  = new Vector2(brushCenter.x, brushCenter.y);
+        RaycastHit2D hit2D = NearestSurfaceHit(bc2D, toolSettings.brushSize + 2f, toolSettings.hitMask.value);
         if (hit2D.collider != null)
         {
             hitPos      = new Vector3(hit2D.point.x, hit2D.point.y, 0f);
@@ -1140,19 +1156,20 @@ public class GrassPainterWindow : EditorWindow
 
     public void AddGrassPainting(RaycastHit[] terrainHit, Event e)
     {
-        // Get the brush centre in 2D world space from the mouse position
         Vector2 brushCenter = ProjectTo2D(HandleUtility.GUIPointToWorldRay(e.mousePosition));
         int grassToPlace = (int)(toolSettings.density * toolSettings.brushSize);
+        float castDist = toolSettings.brushSize + 1f;
 
         for (int k = 0; k < grassToPlace; k++)
         {
-            // Random XY world-space position within the brush disc
-            Vector2 randomPos = brushCenter + Random.insideUnitCircle * toolSettings.brushSize;
+            // Random XY position within the brush disc
+            Vector2 origin = brushCenter + Random.insideUnitCircle * toolSettings.brushSize;
 
-            // Cast straight down to find the surface.
-            // CompositeCollider2D and TilemapCollider2D are both hit correctly this way.
-            RaycastHit2D hit = Physics2D.Raycast(
-                randomPos + Vector2.up * 10f, Vector2.down, 20f, toolSettings.hitMask.value);
+            // Skip origins that are inside solid geometry (cast from inside never hits)
+            if (Physics2D.OverlapPoint(origin, toolSettings.hitMask.value) != null) continue;
+
+            // Cast in 8 directions to find the nearest surface in any orientation
+            RaycastHit2D hit = NearestSurfaceHit(origin, castDist, toolSettings.hitMask.value);
 
             if (hit.collider == null) continue;
             if ((toolSettings.paintMask.value & (1 << hit.collider.gameObject.layer)) == 0) continue;

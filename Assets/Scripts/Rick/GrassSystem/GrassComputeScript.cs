@@ -278,7 +278,7 @@ public class GrassComputeScript : MonoBehaviour
             float phase    = now * windSpeed + pos.x * 0.7f + pos.y * 0.3f;
             float windBend = Mathf.Sin(phase) * windStrength * height;
 
-            // Interaction: push tip away from player
+            // Interaction: push tip away from player and all ShaderInteractors
             float pushBend = 0f;
             if (hasPlayer)
             {
@@ -288,6 +288,21 @@ public class GrassComputeScript : MonoBehaviour
                 {
                     float dist      = Mathf.Sqrt(distSq);
                     float influence = (1f - dist / interactR) * affectStr * height;
+                    pushBend += (diffX / dist) * influence;
+                }
+            }
+            for (int s = 0; s < ShaderInteractor.all.Count; s++)
+            {
+                ShaderInteractor si = ShaderInteractor.all[s];
+                if (si == null) continue;
+                float ir    = si.radius * 1.5f;
+                float diffX = pos.x - si.transform.position.x;
+                float diffY = pos.y - si.transform.position.y;
+                float distSq = diffX * diffX + diffY * diffY;
+                if (distSq < ir * ir && distSq > 0.0001f)
+                {
+                    float dist      = Mathf.Sqrt(distSq);
+                    float influence = (1f - dist / ir) * affectStr * height;
                     pushBend += (diffX / dist) * influence;
                 }
             }
