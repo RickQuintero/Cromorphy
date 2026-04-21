@@ -49,6 +49,7 @@ public class ProceduralLegPlacement2D : MonoBehaviour
     private Vector2 _surfaceNormal = Vector2.up;
     private float   _stepStartTime;
     private float   _lastStepTime;
+    private bool    _wasGrounded;
 
     private float StepPercent =>
         Mathf.Clamp01((Time.time - _stepStartTime) / Mathf.Max(stepDuration, 0.001f));
@@ -92,14 +93,21 @@ public class ProceduralLegPlacement2D : MonoBehaviour
         bool hit = FindBestHit(out Vector2 bestHit, out Vector2 bestNormal);
         legGrounded = hit;
 
+        // Just landed — snap immediately, bypassing cooldown and distance checks
+        if (hit && !_wasGrounded)
+        {
+            BeginStep(bestHit, bestNormal);
+        }
         // Auto-step: only when enabled — disable to let an external controller sequence the steps
-        if (autoStep
+        else if (autoStep
             && hit
             && Time.time >= _lastStepTime + stepCooldown
             && Vector2.Distance(bestHit, _stepTarget) > stepTriggerDistance)
         {
             BeginStep(bestHit, bestNormal);
         }
+
+        _wasGrounded = hit;
         if (legGrounded)
         {
             MoveIkTarget();
