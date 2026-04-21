@@ -33,7 +33,7 @@ using UnityEngine.InputSystem;
         private const string ACTION_CROUCH = "Crouch";
         private const string ACTION_ATTACK = "Attack";
 
-        private const string ACTION_AIM = "RightClick";
+        private const string ACTION_AIM = "Interact";
 
         // ── Cached InputAction references ──────────────────────────────────────
         // Caching avoids dictionary lookup overhead on every ReadValue call.

@@ -40,8 +40,8 @@ public class ProceduralLegPlacement2D : MonoBehaviour
 
     // ── Public state ──────────────────────────────────────────────────────
     public bool    legGrounded  { get; private set; }
-    /// <summary>The last confirmed ground contact point (where the foot is stepping toward).</summary>
-    public Vector2 GroundContact => _stepTarget;
+    public Vector2 GroundContact  => _stepTarget;
+    public Vector2 SurfaceNormal  => _surfaceNormal;
 
     // ── Runtime ───────────────────────────────────────────────────────────
     private Vector2 _stepFrom;

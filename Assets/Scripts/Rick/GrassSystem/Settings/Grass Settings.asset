@@ -28,7 +28,7 @@ MonoBehaviour:
   windStrength: 0.05
   allowedBladesPerVertex: 8
   allowedSegmentsPerBlade: 5
-  affectStrength: 2
+  affectStrength: 0.2
   topTint: {r: 0.6855345, g: 0.6855345, b: 0.6855345, a: 1}
   bottomTint: {r: 0.026996529, g: 0.026996529, b: 0.24528301, a: 1}
   drawBounds: 1

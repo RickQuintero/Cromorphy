@@ -204,8 +204,14 @@ public class TongueSystemAttack : MonoBehaviour
             _mouthAnimator.SetBool("IsAttacking", attacking);
     }
 
+    // True for one cycle after the tongue fully retracts. TongueTrigger reads and clears this.
+    public bool HasRetracted { get; private set; }
+
+    public void ClearRetractedFlag() => HasRetracted = false;
+
     void ReturnToIdle()
     {
+        if (_state == State.Retracting) HasRetracted = true;
         _state       = State.Idle;
         _chargeTimer = 0f;
         if (rangeIndicator != null)

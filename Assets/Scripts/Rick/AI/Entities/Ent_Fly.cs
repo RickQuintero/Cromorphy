@@ -73,6 +73,13 @@ public class Ent_Fly : MonoBehaviour
         _dirInterval = Random.Range(dirChangeMin, dirChangeMax);
     }
 
+    // Called by TongueTrigger before returning this object to the pool.
+    public void ResetForPool()
+    {
+        if (_rb != null) _rb.isKinematic = false;
+        PickNewDirection();
+    }
+
     private void OnDrawGizmos()
     {
         if (!drawRays) return;

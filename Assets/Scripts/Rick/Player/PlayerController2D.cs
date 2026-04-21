@@ -13,7 +13,7 @@ public class PlayerController2D : MonoBehaviour
 
     // ── Jump ──────────────────────────────────────────────────────────────
     [Header("Jump")]
-    public float jumpForce = 16f;
+    public float jumpForce = 16f; 
 
     [Tooltip("Linear and angular damping applied to bodyRigidbodies when grounded (0 = free-fall).")]
     public float groundedDamping = 4f;
@@ -77,12 +77,13 @@ public class PlayerController2D : MonoBehaviour
     [Tooltip("How fast the roots lerp toward their target world position.")]
     public float rootLerpSpeed = 8f;
 
-    // ── Ground Detection (8 rays) ─────────────────────────────────────────
+    // ── Ground Detection ──────────────────────────────────────────────────
     [Header("Ground Detection")]
-    public LayerMask solidLayer;
-
-    [Tooltip("How far each of the 8 directional rays travels before giving up.")]
+    [Tooltip("How far each of the 8 directional water rays travels.")]
     public float groundCheckDistance = 0.7f;
+
+    [Tooltip("How many limbs must be grounded before the player is considered grounded (default 2).")]
+    public int groundedLimbsRequired = 2;
 
     // ── Head ──────────────────────────────────────────────────────────────
     [Header("Head")]
@@ -317,28 +318,25 @@ public class PlayerController2D : MonoBehaviour
             return;
         }
 
-        // ── Normal: ground detection ──────────────────────────────────────
-        _isGrounded = false;
-        Vector2 normalSum = Vector2.zero;
-        int     hitCount  = 0;
+        // ── Normal: ground detection via limbs ───────────────────────────────
+        int     groundedCount = 0;
+        Vector2 normalSum     = Vector2.zero;
 
-        foreach (var dir in _rayDirs)
+        ProceduralLegPlacement2D[] allLimbs = { LeftLegLimb, RightLegLimb, LeftArmLimb, RightArmLimb };
+        foreach (var limb in allLimbs)
         {
-            RaycastHit2D hit = Physics2D.Raycast(
-                transform.position, dir, groundCheckDistance, solidLayer);
-
-            if (hit.collider == null) continue;
-
-            _isGrounded = true;
-            normalSum  += hit.normal;
-            hitCount++;
+            if (limb != null && limb.legGrounded)
+            {
+                groundedCount++;
+                normalSum += limb.SurfaceNormal;
+            }
         }
 
-        // Average all hit normals → jump pushes away from every touched surface
-        if (hitCount > 0)
+        _isGrounded = groundedCount >= groundedLimbsRequired;
+        if (_isGrounded)
         {
             _groundNormal     = normalSum.normalized;
-            _lastGroundedTime = Time.time;   // feed coyote timer
+            _lastGroundedTime = Time.time;
         }
 
         // Grounded = gravityScale 0 (stick to surface). Airborne = 1 (normal Unity gravity).
@@ -487,16 +485,6 @@ public class PlayerController2D : MonoBehaviour
     {
         foreach (var dir in _rayDirs)
         {
-            // Solid ground rays
-            RaycastHit2D hit = Physics2D.Raycast(
-                transform.position, dir, groundCheckDistance, solidLayer);
-            Gizmos.color = hit.collider != null ? Color.green : new Color(1f, 0f, 0f, 0.4f);
-            Gizmos.DrawLine(
-                transform.position,
-                (Vector2)transform.position + dir * groundCheckDistance);
-            if (hit.collider != null)
-                Gizmos.DrawWireSphere(hit.point, 0.04f);
-
             // Water rays
             RaycastHit2D waterHit = Physics2D.Raycast(
                 transform.position, dir, groundCheckDistance, waterLayer);
