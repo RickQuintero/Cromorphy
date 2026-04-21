@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5775991965726767197}
   - component: {fileID: 1184617377969534633}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -261,7 +261,7 @@ GameObject:
   - component: {fileID: 8258365202076783465}
   - component: {fileID: 711765408970526351}
   - component: {fileID: 7167396318800675686}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Part_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -328,7 +328,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: 0.8840008, y: 0.010000229}
+  m_ConnectedAnchor: {x: 0.8839989, y: 0.009999752}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:
@@ -642,7 +642,7 @@ GameObject:
   - component: {fileID: 5105085090192452190}
   - component: {fileID: 6088166579692214868}
   - component: {fileID: 7679251588412009268}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Part_03
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -709,7 +709,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: 0.71899986, y: 0}
+  m_ConnectedAnchor: {x: 0.71900177, y: 0}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:
@@ -766,7 +766,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1767148257400724629}
   - component: {fileID: 4675871439733800067}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -859,7 +859,7 @@ GameObject:
   - component: {fileID: 5729340959081668306}
   - component: {fileID: 7569841787176819966}
   - component: {fileID: 8134749828414021918}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Part_01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -983,7 +983,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8002983885154247750}
   - component: {fileID: 3614694216130564664}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1076,7 +1076,7 @@ GameObject:
   - component: {fileID: 3937769877778247919}
   - component: {fileID: 6933894449868718931}
   - component: {fileID: 5936207992524625116}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Part_04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1143,7 +1143,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: 0.7589989, y: -0.02000126}
+  m_ConnectedAnchor: {x: 0.7589989, y: -0.020000672}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:
@@ -1291,7 +1291,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3819336048089613998}
   - component: {fileID: 5598070899324619095}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}

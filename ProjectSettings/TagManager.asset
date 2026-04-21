@@ -15,8 +15,8 @@ TagManager:
   - Branches
   - Depredator
   - Pray
-  - 
-  - 
+  - Camera_Limits
+  - Emitters
   - 
   - 
   - 
@@ -61,6 +61,9 @@ TagManager:
     locked: 0
   - name: Front2
     uniqueID: 1376789537
+    locked: 0
+  - name: Water
+    uniqueID: 3630482593
     locked: 0
   m_RenderingLayers:
   - Default

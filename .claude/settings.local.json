@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.unity3d.com)",
+      "Bash(find \"C:\\\\Users\\\\ASUS\\\\Desktop\\\\Cromorphia\" -name \"*.log\" -type f -exec grep -l \"error\" {} \\\\;)",
+      "Bash(find \"C:\\\\Users\\\\ASUS\\\\Desktop\\\\Cromorphia\\\\Assets\\\\Scripts\\\\Rick\" -name \"*.cs\" -type f -exec wc -l {} +)",
+      "Bash(find \"C:\\\\Users\\\\ASUS\\\\Desktop\\\\Cromorphia\\\\Assets\\\\Editor\" -name \"*.cs\" -type f -exec wc -l {} +)"
+    ]
+  }
+}

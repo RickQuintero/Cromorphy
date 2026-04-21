@@ -64,6 +64,10 @@ public class Ent_Snake : AIAgent
     };
 
     private bool _isGrounded;
+    private static readonly RaycastHit2D[] _hitBuffer = new RaycastHit2D[1];
+    private ContactFilter2D _groundFilter;
+    private ContactFilter2D _foodFilter;
+    private ContactFilter2D _playerFilter;
 
     // ── NavMesh ───────────────────────────────────────────────────────────
     private NavMeshAgent _agent;
@@ -93,6 +97,10 @@ public class Ent_Snake : AIAgent
         _agent.stoppingDistance = 0f;
 
         Rb.freezeRotation = true;
+
+        _groundFilter = new ContactFilter2D { useLayerMask = true, layerMask = solidLayer };
+        _foodFilter   = new ContactFilter2D { useLayerMask = true, layerMask = snakeFoodLayer };
+        _playerFilter = new ContactFilter2D { useLayerMask = true, layerMask = playerLayer };
     }
 
     protected override void RegisterStates()
@@ -133,10 +141,11 @@ public class Ent_Snake : AIAgent
 
         foreach (var dir in _rayDirs)
         {
-            RaycastHit2D hit = Physics2D.Raycast(
-                transform.position, dir, groundCheckDistance, solidLayer);
-
-            if (hit.collider != null) { _isGrounded = true; break; }
+            if (Physics2D.Raycast(transform.position, dir, _groundFilter, _hitBuffer, groundCheckDistance) > 0)
+            { 
+                _isGrounded = true; 
+                break; 
+            }
         }
 
         float gravity = _isGrounded ? 0f : 1f;
@@ -239,11 +248,17 @@ public class Ent_Snake : AIAgent
 
         foreach (Vector2 d in _rayDirs)
         {
-            RaycastHit2D mh = Physics2D.Raycast(origin, d, detectionRayLength, snakeFoodLayer);
-            if (mh.collider != null && mh.distance < mouseDist)  { mouseHit  = mh.transform; mouseDist  = mh.distance; }
+            if (Physics2D.Raycast(origin, d, _foodFilter, _hitBuffer, detectionRayLength) > 0)
+            {
+                RaycastHit2D mh = _hitBuffer[0];
+                if (mh.distance < mouseDist) { mouseHit = mh.transform; mouseDist = mh.distance; }
+            }
 
-            RaycastHit2D ph = Physics2D.Raycast(origin, d, detectionRayLength, playerLayer);
-            if (ph.collider != null && ph.distance < playerDist) { playerHit = ph.transform; playerDist = ph.distance; }
+            if (Physics2D.Raycast(origin, d, _playerFilter, _hitBuffer, detectionRayLength) > 0)
+            {
+                RaycastHit2D ph = _hitBuffer[0];
+                if (ph.distance < playerDist) { playerHit = ph.transform; playerDist = ph.distance; }
+            }
         }
 
         if (mouseHit  != null) { found = mouseHit;  isPlayer = false; return true; }
@@ -389,10 +404,12 @@ public class Ent_Snake : AIAgent
     {
         public override AIStateID ID => AIStateID.Chase;
         private float _lostTimer;
+        private float _pathTimer;
 
         public override void Enter(AIAgent a)
         {
             _lostTimer = 0f;
+            _pathTimer = 0.25f; // trigger immediately on enter
             ((Ent_Snake)a)._agent.isStopped = false;
         }
 
@@ -409,8 +426,13 @@ public class Ent_Snake : AIAgent
 
             _lostTimer = 0f;
 
-            // Recalculate path every frame so the snake reacts to target movement
-            s.SetDestination(s.Target.position);
+            _pathTimer += Time.fixedDeltaTime;
+            if (_pathTimer >= 0.25f)
+            {
+                s.SetDestination(s.Target.position);
+                _pathTimer = 0f;
+            }
+
             s.FollowPath(s.moveSpeed);
 
             if (Vector2.Distance(s.transform.position, s.Target.position) <= s.attackRange)

@@ -95,6 +95,8 @@ public class PlayerController2D : MonoBehaviour
     public float stepDistance = 0.3f;
     public bool  doubleStep   = false;
 
+    public void SetGrassSpeedMultiplier(float multiplier) => _grassSpeedMultiplier = multiplier;
+
     // ── Step Sound ────────────────────────────────────────────────────────
     [Header("Step Sound")]
     public AudioSource stepAudio;
@@ -115,6 +117,8 @@ public class PlayerController2D : MonoBehaviour
     // True during the lockout window right after a jump fires
     private bool IsJumping => Time.time < _jumpTime + jumpLockoutDuration;
 
+    private float   _grassSpeedMultiplier = 1f;
+
     private Vector2 _lastPosition;
     private float   _distanceTraveled;
     private int     _stepIndex;
@@ -133,12 +137,20 @@ public class PlayerController2D : MonoBehaviour
         new Vector2(-1f, -1f).normalized,
     };
 
+    // ── Caching & Physics ────────────────────────────────────────────────
+    private static readonly RaycastHit2D[] _hitBuffer = new RaycastHit2D[1];
+    private ContactFilter2D _waterFilter;
+    private ContactFilter2D _solidFilter;
+
     // ─────────────────────────────────────────────────────────────────────
 
     private void Start()
     {
         _rb           = GetComponent<Rigidbody2D>();
         _lastPosition = transform.position;
+        
+        _waterFilter = new ContactFilter2D { useLayerMask = true, layerMask = waterLayer };
+        _solidFilter = new ContactFilter2D { useLayerMask = true, layerMask = solidLayer };
     }
 
     private void FixedUpdate()
@@ -223,8 +235,9 @@ public class PlayerController2D : MonoBehaviour
 
         if (IsJumping) return;
         if (!_isGrounded) return; // only clamp on ground — in air, let the player overspeed a bit for better jump arcs and midair control
-        if (_rb.linearVelocity.magnitude > maxSpeed)
-            _rb.linearVelocity = _rb.linearVelocity.normalized * maxSpeed;
+        float effectiveMaxSpeed = maxSpeed * _grassSpeedMultiplier;
+        if (_rb.linearVelocity.magnitude > effectiveMaxSpeed)
+            _rb.linearVelocity = _rb.linearVelocity.normalized * effectiveMaxSpeed;
     }
 
     // ── Jump ──────────────────────────────────────────────────────────────
@@ -255,9 +268,8 @@ public class PlayerController2D : MonoBehaviour
         int waterHits = 0;
         foreach (var dir in _rayDirs)
         {
-            RaycastHit2D hit = Physics2D.Raycast(
-                transform.position, dir, groundCheckDistance, waterLayer);
-            if (hit.collider != null) waterHits++;
+            if (Physics2D.Raycast(transform.position, dir, _waterFilter, _hitBuffer, groundCheckDistance) > 0)
+                waterHits++;
         }
         _state = waterHits >= waterHitsRequired ? PlayerState.Water : PlayerState.Normal;
 
@@ -300,14 +312,12 @@ public class PlayerController2D : MonoBehaviour
 
         foreach (var dir in _rayDirs)
         {
-            RaycastHit2D hit = Physics2D.Raycast(
-                transform.position, dir, groundCheckDistance, solidLayer);
-
-            if (hit.collider == null) continue;
-
-            _isGrounded = true;
-            normalSum  += hit.normal;
-            hitCount++;
+            if (Physics2D.Raycast(transform.position, dir, _solidFilter, _hitBuffer, groundCheckDistance) > 0)
+            {
+                _isGrounded = true;
+                normalSum  += _hitBuffer[0].normal;
+                hitCount++;
+            }
         }
 
         // Average all hit normals → jump pushes away from every touched surface
