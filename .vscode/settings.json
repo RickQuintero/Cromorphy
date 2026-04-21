@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Cromorphia.slnx",
+    "dotnet.defaultSolution": "Cromorphy.slnx",
     "kiroAgent.configureMCP": "Disabled"
 }
