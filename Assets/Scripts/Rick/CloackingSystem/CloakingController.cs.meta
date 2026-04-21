@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: c2e299c2ab0e7944b96420e28a7836bf
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - inputReader: {instanceID: 0}
+  - cloakMaterial: {fileID: 2100000, guid: 224517fee751e464a978fefa73c924b0, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

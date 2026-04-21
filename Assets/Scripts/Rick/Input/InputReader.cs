@@ -24,6 +24,7 @@ using UnityEngine.InputSystem;
     ///   "Attack" → Button
     /// </summary>
 
+    [DefaultExecutionOrder(-100)]
     public class InputReader : MonoBehaviour
     {
         // ── Action name constants ───────────────────────────────────────────────
@@ -58,8 +59,14 @@ using UnityEngine.InputSystem;
         /// <summary>True in the frame the jump button was released.</summary>
         public bool JumpUp         { get; private set; }
 
+        /// <summary>True only in the frame crouch was pressed.</summary>
+        public bool CrouchDown     { get; private set; }
+
         /// <summary>True while crouch/crawl is held.</summary>
         public bool CrouchHeld     { get; private set; }
+
+        /// <summary>True only in the frame crouch was released.</summary>
+        public bool CrouchUp       { get; private set; }
 
         /// <summary>True only in the frame attack was pressed.</summary>
         public bool AttackDown     { get; private set; }
@@ -104,7 +111,9 @@ using UnityEngine.InputSystem;
             JumpHeld   = _jumpAction.IsPressed();
             JumpDown   = _jumpAction.WasPressedThisFrame();
             JumpUp     = _jumpAction.WasReleasedThisFrame();
+            CrouchDown = _crouchAction.WasPressedThisFrame();
             CrouchHeld = _crouchAction.IsPressed();
+            CrouchUp   = _crouchAction.WasReleasedThisFrame();
             AttackDown = _attackAction.WasPressedThisFrame();
             AimDown    = _aimAction.WasPressedThisFrame();
             AimHeld    = _aimAction.IsPressed();
