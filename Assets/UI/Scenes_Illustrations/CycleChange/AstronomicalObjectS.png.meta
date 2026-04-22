@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 4197be2eb8e790d40a7f89679be6439e
+guid: 12f24ee3888e41345bf8b7cd6ca3182c
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -108,12 +108,56 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: AstronomicalObjectS_0
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 48
+        width: 129
+        height: 127
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c56965f331fb6154e9a63ae2221f9d75
+      internalID: -1875211157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AstronomicalObjectS_1
+      rect:
+        serializedVersion: 2
+        x: 162
+        y: 48
+        width: 125
+        height: 126
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cce830ba92dec0d4daa59ff70406c0b8
+      internalID: -1660461204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 110ead556a73ffb4bbb52e73990c377b
     internalID: 0
     vertices: []
     indices: 
@@ -121,8 +165,14 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
-    nameFileIdTable: {}
+      entries:
+      - key: SpriteEditor.SliceOnImport
+        value: True
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":true,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      AstronomicalObjectS_0: -1875211157
+      AstronomicalObjectS_1: -1660461204
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
