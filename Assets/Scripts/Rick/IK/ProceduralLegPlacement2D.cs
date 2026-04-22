@@ -66,10 +66,20 @@ public class ProceduralLegPlacement2D : MonoBehaviour
         new Vector2(-1f, -1f).normalized,
     };
 
+    // ── Caching & Physics ────────────────────────────────────────────────
+    private static readonly RaycastHit2D[] _hitBuffer = new RaycastHit2D[1];
+    private ContactFilter2D _filter;
+    private Vector2 _cachedHitPoint;
+    private Vector2 _cachedNormal;
+    private Vector2 _lastOriginPos = new Vector2(float.MaxValue, float.MaxValue);
+    private bool _lastHitResult;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────
 
     void Start()
     {
+        _filter = new ContactFilter2D { useLayerMask = true, layerMask = solidLayer };
+
         _stepStartTime = Time.time - stepDuration; // mark as already complete
         _lastStepTime  = Time.time;
 
@@ -156,6 +166,17 @@ public class ProceduralLegPlacement2D : MonoBehaviour
     private bool FindBestHit(out Vector2 hitPoint, out Vector2 normal)
     {
         Vector2 origin   = OriginPos();
+
+        // --- SPATIAL CACHING ---
+        if ((origin - _lastOriginPos).sqrMagnitude < 0.0025f)
+        {
+            hitPoint = _cachedHitPoint;
+            normal = _cachedNormal;
+            return _lastHitResult;
+        }
+        _lastOriginPos = origin;
+        // -----------------------
+
         float   bestDist = float.MaxValue;
         hitPoint = origin;
         normal   = Vector2.up;
@@ -163,15 +184,22 @@ public class ProceduralLegPlacement2D : MonoBehaviour
 
         foreach (var dir in _dirs)
         {
-            RaycastHit2D h = Physics2D.Raycast(origin, dir, rayLength, solidLayer);
-            if (h.collider != null && h.distance < bestDist)
+            if (Physics2D.Raycast(origin, dir, _filter, _hitBuffer, rayLength) > 0)
             {
-                bestDist = h.distance;
-                hitPoint = h.point;
-                normal   = h.normal;
-                found    = true;
+                RaycastHit2D h = _hitBuffer[0];
+                if (h.distance < bestDist)
+                {
+                    bestDist = h.distance;
+                    hitPoint = h.point;
+                    normal   = h.normal;
+                    found    = true;
+                }
             }
         }
+
+        _cachedHitPoint = hitPoint;
+        _cachedNormal = normal;
+        _lastHitResult = found;
 
         return found;
     }
