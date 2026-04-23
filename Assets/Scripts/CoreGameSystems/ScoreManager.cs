@@ -2,15 +2,17 @@ using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public static ScoreManager Instance { get; private set; }
+    private void Awake()
     {
-        
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public int numberOfCycles = 0;
+    public int MaxJumpLevel = 1;
+    public int MaxTongueRadius = 3;
+    public int MaxCamuflajeTime = 5;
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+#pragma warning disable CS0618
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 

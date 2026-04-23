@@ -28,7 +28,7 @@ public class TongueTrigger : MonoBehaviour
         _capturedPrey = other.gameObject;
         _preyRb       = _capturedPrey.GetComponent<Rigidbody2D>();
 
-        if (_preyRb != null) _preyRb.isKinematic = true;
+        if (_preyRb != null) _preyRb.bodyType = RigidbodyType2D.Kinematic;
         _capturedPrey.transform.SetParent(transform);
     }
 

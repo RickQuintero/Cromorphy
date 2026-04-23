@@ -76,7 +76,7 @@ public class Ent_Fly : MonoBehaviour
     // Called by TongueTrigger before returning this object to the pool.
     public void ResetForPool()
     {
-        if (_rb != null) _rb.isKinematic = false;
+        if (_rb != null) _rb.bodyType = RigidbodyType2D.Dynamic;
         PickNewDirection();
     }
 

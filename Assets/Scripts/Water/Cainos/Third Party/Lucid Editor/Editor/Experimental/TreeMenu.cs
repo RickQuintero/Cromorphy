@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+#pragma warning disable CS0618
 using UnityEditor.IMGUI.Controls;
 
 namespace Cainos.LucidEditor.Experimental

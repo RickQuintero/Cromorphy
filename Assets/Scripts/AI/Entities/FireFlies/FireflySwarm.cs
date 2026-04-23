@@ -1,253 +1,94 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
-/// <summary>
-/// Gestiona un enjambre de luciérnagas que guían al jugador hacia un objetivo
-/// </summary>
-public class FireflySwarm : MonoBehaviour {
-    
-    [Header("Target Settings")]
-    [SerializeField] private Transform targetDestination;
+public class FireflySwarm : MonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] private FireflyMorseController morseController;
+    [SerializeField] private FireflyPathGuide pathGuide;
     [SerializeField] private Transform player;
-    [SerializeField] private float activationDistance = 15f;
-    [SerializeField] private float deactivationDistance = 3f;
-    
-    [Header("Swarm Settings")]
-    [SerializeField] private GameObject fireflyPrefab;
-    [SerializeField] private int fireflyCount = 8;
-    [SerializeField] private float swarmRadius = 2f;
-    [SerializeField] private float distanceFromPlayer = 3f;
-    
-    [Header("Morse Message")]
-    [SerializeField] private string[] directionMessages = new string[] {
-        "DERECHA", 
-        "IZQUIERDA",
-        "ARRIBA",
-        "ABAJO"
-    };
-    
-    [Header("Direction Settings")]
-    [SerializeField] private float updateInterval = 2f;
-    [SerializeField] private bool showDebugGizmos = true;
-    
-    private List<FireflyGuide> fireflies = new List<FireflyGuide>();
-    private bool isActive = false;
-    private float lastUpdateTime = 0f;
-    private Vector2 currentDirection;
 
-    void Start() {
-        // Crear el enjambre
-        CreateSwarm();
-        
-        // Buscar jugador si no está asignado
-        if (player == null) {
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null) {
-                player = playerObj.transform;
-            }
-        }
-        
-        // Desactivar inicialmente
-        SetSwarmActive(false);
-    }
+    [Header("Pool")]
+    [Tooltip("Index of the FireflyBoid entry in EntityPoolManager.entities")]
+    [SerializeField] private int poolIndex;
+    [SerializeField] private int swarmSize  = 20;
+    [SerializeField] private float spawnRadius = 3f;
 
-    void Update() {
-        if (player == null || targetDestination == null) return;
-        
-        float distanceToTarget = Vector2.Distance(player.position, targetDestination.position);
-        
-        // Activar/desactivar según distancia
-        if (!isActive && distanceToTarget > deactivationDistance && distanceToTarget < activationDistance) {
-            SetSwarmActive(true);
-        }
-        else if (isActive && (distanceToTarget <= deactivationDistance || distanceToTarget > activationDistance)) {
-            SetSwarmActive(false);
-        }
-        
-        // Actualizar posición y dirección del enjambre
-        if (isActive) {
-            UpdateSwarmPosition();
-            
-            if (Time.time - lastUpdateTime > updateInterval) {
-                UpdateDirection();
-                lastUpdateTime = Time.time;
-            }
+    private readonly List<FireflyBoid> _activeBoids = new List<FireflyBoid>();
+    private bool _wasDay;
+
+    /// <summary>Average world position of all active boids. Used by FireflyPathGuide to detect waypoint progress.</summary>
+    public Vector2 AveragePosition
+    {
+        get
+        {
+            if (_activeBoids.Count == 0) return transform.position;
+            Vector2 sum = Vector2.zero;
+            foreach (FireflyBoid b in _activeBoids)
+                if (b != null) sum += (Vector2)b.transform.position;
+            return sum / _activeBoids.Count;
         }
     }
 
-    /// <summary>
-    /// Crea el enjambre de luciérnagas
-    /// </summary>
-    private void CreateSwarm() {
-        for (int i = 0; i < fireflyCount; i++) {
-            GameObject fireflyObj;
-            
-            if (fireflyPrefab != null) {
-                fireflyObj = Instantiate(fireflyPrefab, transform);
-            }
-            else {
-                // Crear luciérnaga básica si no hay prefab
-                fireflyObj = new GameObject($"Firefly_{i}");
-                fireflyObj.transform.parent = transform;
-                
-                // Añadir SpriteRenderer
-                SpriteRenderer sr = fireflyObj.AddComponent<SpriteRenderer>();
-                sr.color = new Color(1f, 0.9f, 0.3f, 1f);
-                
-                // Crear sprite circular simple
-                Texture2D tex = new Texture2D(32, 32);
-                for (int x = 0; x < 32; x++) {
-                    for (int y = 0; y < 32; y++) {
-                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(16, 16));
-                        float alpha = Mathf.Clamp01(1f - (dist / 16f));
-                        tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
-                    }
-                }
-                tex.Apply();
-                sr.sprite = Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
-                
-                // Añadir luz 2D
-                var light = fireflyObj.AddComponent<Light2D>();
-                light.lightType = Light2D.LightType.Point;
-                light.color = new Color(1f, 0.9f, 0.3f, 1f);
-                light.intensity = 0.5f;
-                light.pointLightOuterRadius = 2f;
-            }
-            
-            // Añadir componente FireflyGuide si no lo tiene
-            FireflyGuide guide = fireflyObj.GetComponent<FireflyGuide>();
-            if (guide == null) {
-                guide = fireflyObj.AddComponent<FireflyGuide>();
-            }
-            
-            // Posicionar en círculo
-            float angle = (i / (float)fireflyCount) * Mathf.PI * 2f;
-            Vector3 pos = new Vector3(
-                Mathf.Cos(angle) * swarmRadius,
-                Mathf.Sin(angle) * swarmRadius,
-                0f
-            );
-            fireflyObj.transform.localPosition = pos;
-            
-            fireflies.Add(guide);
+    private void Awake()
+    {
+        if (player == null)
+        {
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null) player = p.transform;
         }
     }
 
-    /// <summary>
-    /// Actualiza la posición del enjambre
-    /// </summary>
-    private void UpdateSwarmPosition() {
-        if (player == null) return;
-        
-        // Calcular dirección hacia el objetivo
-        currentDirection = ((Vector2)targetDestination.position - (Vector2)player.position).normalized;
-        
-        // Posicionar el enjambre delante del jugador en dirección al objetivo
-        Vector3 targetPos = player.position + (Vector3)currentDirection * distanceFromPlayer;
-        transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * 2f);
+    private void Start()
+    {
+        _wasDay = DayLightController.Instance != null && DayLightController.Instance.IsDay;
+        if (!_wasDay) SpawnSwarm();
     }
 
-    /// <summary>
-    /// Actualiza la dirección y mensaje Morse
-    /// </summary>
-    private void UpdateDirection() {
-        if (player == null || targetDestination == null) return;
-        
-        // Calcular dirección
-        Vector2 direction = ((Vector2)targetDestination.position - (Vector2)player.position).normalized;
-        
-        // Determinar mensaje según dirección predominante
-        string message = GetDirectionMessage(direction);
-        
-        // Asignar mensaje a todas las luciérnagas
-        foreach (var firefly in fireflies) {
-            if (firefly != null) {
-                firefly.SetMorseMessage(message);
-            }
+    private void Update()
+    {
+        if (DayLightController.Instance == null) return;
+
+        bool isDay = DayLightController.Instance.IsDay;
+
+        if (isDay != _wasDay)
+        {
+            _wasDay = isDay;
+            if (isDay) DespawnSwarm();
+            else       SpawnSwarm();
+        }
+
+        if (!isDay && pathGuide != null)
+        {
+            Vector2 waypoint = pathGuide.CurrentWaypoint;
+            foreach (FireflyBoid boid in _activeBoids)
+                if (boid != null) boid.SetTarget(waypoint);
         }
     }
 
-    /// <summary>
-    /// Obtiene el mensaje de dirección según el vector
-    /// </summary>
-    private string GetDirectionMessage(Vector2 direction) {
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        
-        // Normalizar ángulo a 0-360
-        if (angle < 0) angle += 360f;
-        
-        // Determinar dirección predominante
-        if (angle >= 45f && angle < 135f) {
-            return directionMessages[2]; // ARRIBA (índice 2)
-        }
-        else if (angle >= 135f && angle < 225f) {
-            return directionMessages[1]; // IZQUIERDA (índice 1)
-        }
-        else if (angle >= 225f && angle < 315f) {
-            return directionMessages[3]; // ABAJO (índice 3)
-        }
-        else {
-            return directionMessages[0]; // DERECHA (índice 0)
+    private void SpawnSwarm()
+    {
+        if (EntityPoolManager.Instance == null) return;
+
+        Vector3 origin = player != null ? player.position : transform.position;
+        for (int i = 0; i < swarmSize; i++)
+        {
+            Vector3 pos = origin + (Vector3)(Random.insideUnitCircle * spawnRadius);
+            GameObject obj = EntityPoolManager.Instance.Spawn(poolIndex, pos, Quaternion.identity);
+            if (obj == null) break;
+
+            FireflyBoid boid = obj.GetComponent<FireflyBoid>();
+            if (boid != null) _activeBoids.Add(boid);
         }
     }
 
-    /// <summary>
-    /// Activa o desactiva el enjambre
-    /// </summary>
-    private void SetSwarmActive(bool active) {
-        isActive = active;
-        
-        // Primero activar/desactivar todos los GameObjects
-        foreach (var firefly in fireflies) {
-            if (firefly != null) {
-                firefly.gameObject.SetActive(active);
-            }
-        }
-        
-        // Luego actualizar dirección o detener parpadeo
-        if (active) {
-            UpdateDirection();
-        }
-        else {
-            foreach (var firefly in fireflies) {
-                if (firefly != null) {
-                    firefly.StopBlinking();
-                }
-            }
-        }
+    private void DespawnSwarm()
+    {
+        foreach (FireflyBoid boid in _activeBoids)
+            boid?.ReturnSelf();
+        _activeBoids.Clear();
     }
 
-    /// <summary>
-    /// Establece el objetivo del enjambre
-    /// </summary>
-    public void SetTarget(Transform target) {
-        targetDestination = target;
-    }
-
-    /// <summary>
-    /// Establece el jugador
-    /// </summary>
-    public void SetPlayer(Transform playerTransform) {
-        player = playerTransform;
-    }
-
-    void OnDrawGizmos() {
-        if (!showDebugGizmos) return;
-        
-        // Dibujar radio de activación
-        if (targetDestination != null) {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(targetDestination.position, activationDistance);
-            
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(targetDestination.position, deactivationDistance);
-        }
-        
-        // Dibujar línea hacia objetivo
-        if (player != null && targetDestination != null && isActive) {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawLine(player.position, targetDestination.position);
-        }
-    }
+    /// <summary>Plays a morse message through the FireflyGuide via FireflyMorseController.</summary>
+    public void PlayMorseMessage(string message) => morseController?.PlayMorse(message);
 }
