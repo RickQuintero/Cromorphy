@@ -5,9 +5,10 @@ public class MainMenuManager : MonoBehaviour
     [Header("Scenes")]
     public int gameSceneIndex = 1;
 
-    [Header("Panels")]
-    public GameObject loadGamePanel;
-
+    public void Start()
+    {
+        AudioManager.Instance.PlaySong("Song_MainMenu");
+    }
     public void PlayGame()
     {
         ArtSceneManager.Instance.LoadSceneByNumber(gameSceneIndex);
@@ -20,16 +21,8 @@ public class MainMenuManager : MonoBehaviour
 #endif
         Application.Quit();
     }
-
-    public void OpenLoadGamePanel()
+    public void PlaySoundClick()
     {
-        if (loadGamePanel != null)
-            loadGamePanel.SetActive(true);
-    }
-
-    public void CloseLoadGamePanel()
-    {
-        if (loadGamePanel != null)
-            loadGamePanel.SetActive(false);
+        AudioManager.Instance.PlayEffect("FX_UIClick");
     }
 }

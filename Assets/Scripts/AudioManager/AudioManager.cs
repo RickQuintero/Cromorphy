@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
-
 /// <summary>
 /// Singleton AudioManager supporting both 2D and 3D spatial audio.
 ///
