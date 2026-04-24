@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Grass Settings
   m_EditorClassIdentifier: Assembly-CSharp::SO_GrassSettings
   shaderToUse: {fileID: 7200000, guid: 878da396165bc9b478351df129beb476, type: 3}
-  materialToUse: {fileID: 2100000, guid: 19a7bb95ac0e1d34eb7dd6f2cc05ff0b, type: 2}
+  materialToUse: {fileID: 2100000, guid: e1f6225a888577448904ae146f458f64, type: 2}
   grassRandomHeightMin: 1
   grassRandomHeightMax: 2
   bladeRadius: 0.2

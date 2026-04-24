@@ -797,7 +797,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: cfd8edff729554b40a04d6e2af7a53ee, type: 2}
+  - {fileID: 2100000, guid: 5a3132404c0bfde49b85a37f7252b697, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -818,7 +818,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -787028155
   m_SortingLayer: 5
-  m_SortingOrder: 1
+  m_SortingOrder: 2
   m_MaskInteraction: 0
   m_Sprite: {fileID: 528169943, guid: 830d446685cb954489aa5f3fe7168a28, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -965,7 +965,6 @@ GameObject:
   - component: {fileID: 2778806366828796880}
   - component: {fileID: 6725751236787720123}
   - component: {fileID: 621946433527289700}
-  - component: {fileID: 7832801222439274752}
   m_Layer: 6
   m_Name: RB_MAIN
   m_TagString: Player
@@ -1147,28 +1146,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShaderInteractor
   radius: 1
---- !u!95 &7832801222439274752
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1727003747817278898}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: c6afef20cf28f2e4aaef22a72323cde6, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1834569850165413967
 GameObject:
   m_ObjectHideFlags: 0
@@ -1482,8 +1459,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6229402769131362354}
+  - component: {fileID: 6498321964738493129}
   m_Layer: 0
-  m_Name: Sprite_HEAD
+  m_Name: HEAD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1506,6 +1484,28 @@ Transform:
   - {fileID: 3827636105253786048}
   m_Father: {fileID: 8083550912329953994}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &6498321964738493129
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2358126437431837276}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4f83ef5b0f7b64f4aa29303fe56b135a, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &2622071034425887114
 GameObject:
   m_ObjectHideFlags: 0
@@ -2211,7 +2211,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81aa5721c3f85c94d975ca6417ccfa11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TongueTrigger
-  tongueSystem: {fileID: 2292020268843950077}
+  tongueSystem: {fileID: 5673516714613032148}
 --- !u!1 &4062727663223008542
 GameObject:
   m_ObjectHideFlags: 0
@@ -2270,7 +2270,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1e32fa9d6743c814fafed2275a6bf6c4, type: 2}
+  - {fileID: 2100000, guid: 5a3132404c0bfde49b85a37f7252b697, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3228,7 +3228,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3827636105253786048}
-  - component: {fileID: 2292020268843950077}
+  - component: {fileID: 5673516714613032148}
   m_Layer: 0
   m_Name: TONGUE_System
   m_TagString: Untagged
@@ -3253,7 +3253,7 @@ Transform:
   - {fileID: 2738905739491698935}
   m_Father: {fileID: 6229402769131362354}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2292020268843950077
+--- !u!114 &5673516714613032148
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3262,23 +3262,23 @@ MonoBehaviour:
   m_GameObject: {fileID: 6122036194026963394}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d276705a7489614aa4ea577fbf5e67d, type: 3}
+  m_Script: {fileID: 11500000, guid: 088e27494d7dd2642b903ddd07ec0795, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LegIk2D
-  segmentLength: 0.4
+  m_EditorClassIdentifier: Assembly-CSharp::TongueSystemAttack
+  segmentLength: 0.15
   maxRange: 3
-  minThickness: 0.1
-  maxThickness: 0.05
+  minThickness: 0.03
+  maxThickness: 0.14
   segmentSprite: {fileID: 21300000, guid: 3df63f397fe7679488b5be6b13d5643b, type: 3}
   segmentMaterial: {fileID: 2100000, guid: 5a3132404c0bfde49b85a37f7252b697, type: 2}
   sortingLayerName: Player
   sortingOrder: 5
-  launchSpeed: 14
+  launchSpeed: 25
   retractSpeed: 9
-  holdDuration: 0.25
+  holdDuration: 0.2
   wiggleFrequency: 10
   wiggleAmplitude: 0.06
-  chargeTime: 0.2
+  chargeTime: 0.05
   preyMask:
     serializedVersion: 2
     m_Bits: 512
@@ -3288,7 +3288,7 @@ MonoBehaviour:
   ikTarget: {fileID: 5732629714404984289}
   rangeIndicator: {fileID: 2738905739491698935}
   _input: {fileID: 0}
-  _mouthAnimator: {fileID: 7832801222439274752}
+  _mouthAnimator: {fileID: 6498321964738493129}
 --- !u!1 &6144864853461651728
 GameObject:
   m_ObjectHideFlags: 0
@@ -3724,7 +3724,7 @@ GameObject:
   - component: {fileID: 2359435662958327645}
   - component: {fileID: 1042239051668430303}
   m_Layer: 6
-  m_Name: Sprite_HEAD (1)
+  m_Name: Sprite_HEAD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4153,7 +4153,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1e32fa9d6743c814fafed2275a6bf6c4, type: 2}
+  - {fileID: 2100000, guid: 5a3132404c0bfde49b85a37f7252b697, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4174,7 +4174,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -787028155
   m_SortingLayer: 5
-  m_SortingOrder: 3
+  m_SortingOrder: 1
   m_MaskInteraction: 0
   m_Sprite: {fileID: 983033298, guid: 830d446685cb954489aa5f3fe7168a28, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
