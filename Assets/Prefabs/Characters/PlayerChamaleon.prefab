@@ -353,7 +353,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: -0.4410019, y: 0.0050001144}
+  m_ConnectedAnchor: {x: -0.44099426, y: 0.0050001144}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:
@@ -965,6 +965,7 @@ GameObject:
   - component: {fileID: 2778806366828796880}
   - component: {fileID: 6725751236787720123}
   - component: {fileID: 621946433527289700}
+  - component: {fileID: 7345213291580187347}
   m_Layer: 6
   m_Name: RB_MAIN
   m_TagString: Player
@@ -1146,6 +1147,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShaderInteractor
   radius: 1
+--- !u!114 &7345213291580187347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1727003747817278898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa4932c98607f9f4f86aa1e288e65125, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerTriggerStates
 --- !u!1 &1834569850165413967
 GameObject:
   m_ObjectHideFlags: 0
@@ -1735,7 +1748,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: -0.2989998, y: -0.006000042}
+  m_ConnectedAnchor: {x: -0.29901123, y: -0.006000042}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:
@@ -2441,7 +2454,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: 0.38299942, y: -0.015999794}
+  m_ConnectedAnchor: {x: 0.3829956, y: -0.015999794}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:
@@ -4462,7 +4475,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: 0.37799835, y: -0.01600027}
+  m_ConnectedAnchor: {x: 0.37800598, y: -0.01600027}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:
@@ -4977,7 +4990,7 @@ HingeJoint2D:
   m_BreakAction: 3
   m_AutoConfigureConnectedAnchor: 1
   m_Anchor: {x: 0, y: 0}
-  m_ConnectedAnchor: {x: 0.37700272, y: -0.016999722}
+  m_ConnectedAnchor: {x: 0.3769989, y: -0.016999722}
   m_UseConnectedAnchor: 1
   m_UseMotor: 0
   m_Motor:

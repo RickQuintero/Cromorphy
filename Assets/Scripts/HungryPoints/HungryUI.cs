@@ -1,65 +1,74 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class HungryUI : MonoBehaviour
 {
-    [Tooltip("GameObject prefab to instantiate — must have a Image component.")]
-    public GameObject hungerSlotPrefab;
+    [Tooltip("TextMeshPro that shows the current hunger number.")]
+    public TextMeshProUGUI label;
 
-    [Tooltip("Color when the slot is filled (active hunger point).")]
-    public Color activeColor = Color.white;
+    [Tooltip("Image whose alpha is driven by the fade.")]
+    public Image image;
 
-    [Tooltip("Color when the slot is empty (lost hunger point).")]
-    public Color inactiveColor = new Color(1f, 1f, 1f, 0.25f);
+    [Tooltip("Seconds to stay fully visible after a change before fading.")]
+    public float holdDuration = 0.5f;
 
-    [Tooltip("Total number of hunger slots to spawn.")]
-    private int maxHungryPoints;
+    [Tooltip("Seconds the fade-out takes.")]
+    public float fadeDuration = 3f;
 
-    private Image[] _slots;
-    private int _lastPoints = -1;
+    // Countdown timer: (holdDuration + fadeDuration) → 0
+    float _timer = 0f;
+    int   _lastPoints = -1;
 
     void Start()
     {
-        maxHungryPoints = HungryPointManager.Instance.maxHungryPoints;
-        SpawnSlots();
-    }
-
-    void SpawnSlots()
-    {
-        if (hungerSlotPrefab == null)
-        {
-            Debug.LogError("HungryUI: hungerSlotPrefab is not assigned!", this);
-            return;
-        }
-
-        foreach (Transform child in transform)
-            Destroy(child.gameObject);
-
-        _slots = new Image[maxHungryPoints];
-        for (int i = 0; i < maxHungryPoints; i++)
-        {
-            GameObject go = Instantiate(hungerSlotPrefab, transform);
-            Image slot = go.GetComponentInChildren<Image>();
-            if (slot == null)
-            {
-                Debug.LogError("HungryUI: prefab has no Image component!", go);
-                return;
-            }
-            slot.color = inactiveColor;
-            _slots[i]  = slot;
-        }
-
-        _lastPoints = -1;
+        _lastPoints = HungryPointManager.Instance.currentHungryPoints;
+        UpdateText(_lastPoints);
+        SetAlpha(0f);
     }
 
     void Update()
     {
-        if (_slots == null) return;
-        int current = Mathf.Clamp(HungryPointManager.Instance.currentHungryPoints, 0, maxHungryPoints);
-        if (current == _lastPoints) return;
-        _lastPoints = current;
+        int current = HungryPointManager.Instance.currentHungryPoints;
 
-        for (int i = 0; i < _slots.Length; i++)
-            _slots[i].color = i < current ? activeColor : inactiveColor;
+        if (current != _lastPoints)
+        {
+            _lastPoints = current;
+            UpdateText(current);
+            _timer = holdDuration + fadeDuration; // reset countdown on every change
+        }
+
+        if (_timer <= 0f) return;
+
+        _timer -= Time.deltaTime;
+
+        // Hold phase → full alpha; fade phase → lerp to 0
+        float alpha = _timer > fadeDuration
+            ? 1f
+            : Mathf.Clamp01(_timer / fadeDuration);
+
+        SetAlpha(alpha);
+    }
+
+    void UpdateText(int points)
+    {
+        if (label) label.text = points.ToString();
+    }
+
+    void SetAlpha(float alpha)
+    {
+        if (image)
+        {
+            Color c = image.color;
+            c.a = alpha;
+            image.color = c;
+        }
+
+        if (label)
+        {
+            Color c = label.color;
+            c.a = alpha;
+            label.color = c;
+        }
     }
 }
