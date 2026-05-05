@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8763213782873731690
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8541247762910501443}
+  - component: {fileID: 3344059229521094179}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8541247762910501443
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8763213782873731690}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3344059229521094179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8763213782873731690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46cd2df2f863242e7862b69b663e0b2c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  songs:
+  - {fileID: 11400000, guid: fa674c2b473c823499faecb6e9f9f8a6, type: 2}
+  - {fileID: 11400000, guid: fc75803a9b673274291dca95b1632558, type: 2}
+  - {fileID: 11400000, guid: a749d16b7a7b75b4e969049ec44c1c68, type: 2}
+  - {fileID: 11400000, guid: a157c03bc54ff4e41af91caf1ace8c3d, type: 2}
+  - {fileID: 11400000, guid: 2dfd9e30585c5c54bb94edb0e6843daa, type: 2}
+  effects:
+  - {fileID: 11400000, guid: 2d9599de0e8bfbc4e81a8fd15ccb10b5, type: 2}
+  - {fileID: 11400000, guid: 97f78e2344955014eb087f624773b83d, type: 2}
+  - {fileID: 11400000, guid: 0a5883069018cf14b87ce13900a7b7df, type: 2}
+  - {fileID: 11400000, guid: e38c5060c5be4a14a837b792b71c8646, type: 2}
+  musicVolume: 0.1
+  voiceVolume: 0.4
+  initialPoolSize: 10

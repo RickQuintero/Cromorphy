@@ -1,0 +1,1021 @@
+fileFormatVersion: 2
+guid: 830d446685cb954489aa5f3fe7168a28
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_0
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 80
+        width: 26
+        height: 15
+      alignment: 9
+      pivot: {x: 0.47839928, y: 0.56926525}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 96b65572bd46ada45ab80adbe94ca73d
+      internalID: -1761541399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_1
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 80
+        width: 26
+        height: 15
+      alignment: 9
+      pivot: {x: 0.36175478, y: 0.56926525}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f7d0083d6ec0e2a40a3a95d01c6b2267
+      internalID: -1601267908
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_2
+      rect:
+        serializedVersion: 2
+        x: 67
+        y: 77
+        width: 26
+        height: 18
+      alignment: 9
+      pivot: {x: 0.36449403, y: 0.5864923}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ee05ac62606de364dbfaa8ec5e05e8b7
+      internalID: 354366956
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_3
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 25
+        width: 7
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2b15d092cafd6c44b9abde8d321afae2
+      internalID: 983033298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_4
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 25
+        width: 7
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2e196b1dccfc7134f962e3f466fecc13
+      internalID: 585998027
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_9
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 68
+        width: 13
+        height: 7
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c04822ddfa9be9c4885b63ea52ba1168
+      internalID: 2136910518
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_10
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 68
+        width: 13
+        height: 6
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1631afb0014d2714ca2c46a6f361a528
+      internalID: -97878194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_11
+      rect:
+        serializedVersion: 2
+        x: 30
+        y: 68
+        width: 13
+        height: 5
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 034cb2c91ed2f7748852090472542305
+      internalID: 1588922614
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_12
+      rect:
+        serializedVersion: 2
+        x: 44
+        y: 68
+        width: 13
+        height: 4
+      alignment: 4
+      pivot: {x: 0, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0efd8b2e299733a4495ff9187f99bf1f
+      internalID: -353559887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_13
+      rect:
+        serializedVersion: 2
+        x: 58
+        y: 68
+        width: 16
+        height: 5
+      alignment: 9
+      pivot: {x: 0, y: 0.25}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3860a4c5958adf945b0c8628e0f39b5d
+      internalID: -110692295
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_14
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 68
+        width: 29
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 10b8c3c2fabfcbc4fb0658859195667f
+      internalID: -1143621672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_15
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 50
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 559173dc4bb14ff4e9d492673338ce26
+      internalID: 1068524672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_16
+      rect:
+        serializedVersion: 2
+        x: 11
+        y: 52
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1856c5eabf1fefb4796822e09ef0cae9
+      internalID: -1522200644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_17
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 52
+        width: 8
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d399f1d2ef4912649a2e46e9e0493ca0
+      internalID: -1686562844
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_18
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 52
+        width: 8
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 671fc7f16a447184a85eaaff2fdb7623
+      internalID: -174683976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_19
+      rect:
+        serializedVersion: 2
+        x: 41
+        y: 52
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f20b957d8b2045841aeeeba72e896d25
+      internalID: 1555209028
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_20
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 50
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 95a6e6a138630cf4c8c30a6c8f0adb9b
+      internalID: -1927888990
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_21
+      rect:
+        serializedVersion: 2
+        x: 89
+        y: 53
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f6cfdeb75a5288f458855aa30fe53c0b
+      internalID: 1069275839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_22
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 55
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 97762be3db2e38841b672a7878d1cfab
+      internalID: 1135524594
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_23
+      rect:
+        serializedVersion: 2
+        x: 105
+        y: 54
+        width: 5
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f68c95dfac98fee4f9437a0bfb8292b3
+      internalID: -1407516675
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_24
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 55
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fd237e851684af941975df07238029d5
+      internalID: -1785070483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_25
+      rect:
+        serializedVersion: 2
+        x: 87
+        y: 48
+        width: 10
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d600a821206e02f4096e32ec6c06df0c
+      internalID: 581017685
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_26
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 49
+        width: 10
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 878b34955b02bad44b97de74fdbf65b3
+      internalID: 411029638
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_27
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 31
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c770e5cbb0dd93d4680c84bbed0ecef9
+      internalID: -1203429465
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_28
+      rect:
+        serializedVersion: 2
+        x: 5
+        y: 40
+        width: 5
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e38dfb8c6759afb43b71f9875ccae5ad
+      internalID: 1933076994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_29
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 31
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 372ab94944c01524baefec51da39fae0
+      internalID: -1450184831
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_30
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 40
+        width: 5
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 597c8693223acde4795768c83a013349
+      internalID: 1276095267
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_31
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 32
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fdcbc70af30996448b714f88e2cd9379
+      internalID: -909983142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_32
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 33
+        width: 14
+        height: 11
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e7a163d9a44028143b791261c8a73344
+      internalID: -501882545
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_33
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 22
+        width: 10
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fa1025f720790f140bfb0ba417a60874
+      internalID: -1890401592
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_34
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 22
+        width: 10
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 71b0c0272db3bec408a72abdccfbe71e
+      internalID: -48118611
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_35
+      rect:
+        serializedVersion: 2
+        x: 3
+        y: 4
+        width: 12
+        height: 9
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c0f14d4fbb857664ab67b69904928a48
+      internalID: 502045453
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_36
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 3
+        width: 16
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 830d55bed30d68d43a3105ddc779d1be
+      internalID: 1511113958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_37
+      rect:
+        serializedVersion: 2
+        x: 35
+        y: 3
+        width: 23
+        height: 11
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ad800eafea4344f458ab8d34e67452bd
+      internalID: 1428640667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_5
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 25
+        width: 7
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ac2b1b92440154e43ac522817f8419b4
+      internalID: 315475448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_6
+      rect:
+        serializedVersion: 2
+        x: 98
+        y: 20
+        width: 3
+        height: 3
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 31d28f6cb8011574fab4b2391d5b6b98
+      internalID: 528169943
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_7
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 19
+        width: 5
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ab9fed2b08b3ac44d84aa51ea892e4aa
+      internalID: 2144904206
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CAMALEON 64X32 PARTES SEPARADAS_8
+      rect:
+        serializedVersion: 2
+        x: 99
+        y: 80
+        width: 26
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c131a309f2c12ae4f92269e8baca91a7
+      internalID: -150989586
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: f9b4ae3d4d3a2ff4d8c90c94cd22f6d1
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      CAMALEON 64X32 PARTES SEPARADAS_0: -1761541399
+      CAMALEON 64X32 PARTES SEPARADAS_1: -1601267908
+      CAMALEON 64X32 PARTES SEPARADAS_10: -97878194
+      CAMALEON 64X32 PARTES SEPARADAS_11: 1588922614
+      CAMALEON 64X32 PARTES SEPARADAS_12: -353559887
+      CAMALEON 64X32 PARTES SEPARADAS_13: -110692295
+      CAMALEON 64X32 PARTES SEPARADAS_14: -1143621672
+      CAMALEON 64X32 PARTES SEPARADAS_15: 1068524672
+      CAMALEON 64X32 PARTES SEPARADAS_16: -1522200644
+      CAMALEON 64X32 PARTES SEPARADAS_17: -1686562844
+      CAMALEON 64X32 PARTES SEPARADAS_18: -174683976
+      CAMALEON 64X32 PARTES SEPARADAS_19: 1555209028
+      CAMALEON 64X32 PARTES SEPARADAS_2: 354366956
+      CAMALEON 64X32 PARTES SEPARADAS_20: -1927888990
+      CAMALEON 64X32 PARTES SEPARADAS_21: 1069275839
+      CAMALEON 64X32 PARTES SEPARADAS_22: 1135524594
+      CAMALEON 64X32 PARTES SEPARADAS_23: -1407516675
+      CAMALEON 64X32 PARTES SEPARADAS_24: -1785070483
+      CAMALEON 64X32 PARTES SEPARADAS_25: 581017685
+      CAMALEON 64X32 PARTES SEPARADAS_26: 411029638
+      CAMALEON 64X32 PARTES SEPARADAS_27: -1203429465
+      CAMALEON 64X32 PARTES SEPARADAS_28: 1933076994
+      CAMALEON 64X32 PARTES SEPARADAS_29: -1450184831
+      CAMALEON 64X32 PARTES SEPARADAS_3: 983033298
+      CAMALEON 64X32 PARTES SEPARADAS_30: 1276095267
+      CAMALEON 64X32 PARTES SEPARADAS_31: -909983142
+      CAMALEON 64X32 PARTES SEPARADAS_32: -501882545
+      CAMALEON 64X32 PARTES SEPARADAS_33: -1890401592
+      CAMALEON 64X32 PARTES SEPARADAS_34: -48118611
+      CAMALEON 64X32 PARTES SEPARADAS_35: 502045453
+      CAMALEON 64X32 PARTES SEPARADAS_36: 1511113958
+      CAMALEON 64X32 PARTES SEPARADAS_37: 1428640667
+      CAMALEON 64X32 PARTES SEPARADAS_38: 146380362
+      CAMALEON 64X32 PARTES SEPARADAS_39: -762152777
+      CAMALEON 64X32 PARTES SEPARADAS_4: 585998027
+      CAMALEON 64X32 PARTES SEPARADAS_5: 315475448
+      CAMALEON 64X32 PARTES SEPARADAS_6: 528169943
+      CAMALEON 64X32 PARTES SEPARADAS_7: 2144904206
+      CAMALEON 64X32 PARTES SEPARADAS_8: -150989586
+      CAMALEON 64X32 PARTES SEPARADAS_9: 2136910518
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

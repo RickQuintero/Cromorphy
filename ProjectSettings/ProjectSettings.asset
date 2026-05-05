@@ -143,8 +143,9 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 0.1.0
-  preloadedAssets: []
+  bundleVersion: 0.4
+  preloadedAssets:
+  - {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -296,7 +297,14 @@ PlayerSettings:
   AndroidAppBundleSizeToValidate: 150
   AndroidReportGooglePlayAppDependencies: 1
   androidSymbolsSizeThreshold: 800
-  m_BuildTargetIcons: []
+  m_BuildTargetIcons:
+  - m_BuildTarget: 
+    m_Icons:
+    - serializedVersion: 2
+      m_Icon: {fileID: 2800000, guid: 1f06349f815cb8a4aa0d2415ced4410f, type: 3}
+      m_Width: 128
+      m_Height: 128
+      m_Kind: 0
   m_BuildTargetPlatformIcons:
   - m_BuildTarget: iPhone
     m_Icons:
@@ -524,8 +532,15 @@ PlayerSettings:
       m_Height: 720
       m_Kind: 1
       m_SubKind: 
-  m_BuildTargetBatching: []
-  m_BuildTargetShaderSettings: []
+  m_BuildTargetBatching:
+  - m_BuildTarget: WebGL
+    m_StaticBatching: 0
+    m_DynamicBatching: 0
+  m_BuildTargetShaderSettings:
+  - m_BuildTarget: WebGL
+    m_ChunkSizeInMB: 16
+    m_MaxChunks: 0
+    m_OverrideDefaultSettings: 0
   m_BuildTargetGraphicsJobs: []
   m_BuildTargetGraphicsJobMode: []
   m_BuildTargetGraphicsAPIs:
@@ -535,13 +550,17 @@ PlayerSettings:
   - m_BuildTarget: AndroidPlayer
     m_APIs: 150000000b000000
     m_Automatic: 0
+  - m_BuildTarget: WebGLSupport
+    m_APIs: 0b000000
+    m_Automatic: 1
   m_BuildTargetVRSettings: []
   m_DefaultShaderChunkSizeInMB: 16
   m_DefaultShaderChunkCount: 0
   openGLRequireES31: 0
   openGLRequireES31AEP: 0
   openGLRequireES32: 0
-  m_TemplateCustomTags: {}
+  m_TemplateCustomTags:
+    PRODUCT_DESCRIPTION: 
   mobileMTRendering:
     Android: 1
     iPhone: 1
@@ -560,6 +579,9 @@ PlayerSettings:
   - serializedVersion: 3
     m_BuildTarget: Android
     m_Formats: 03000000
+  - serializedVersion: 3
+    m_BuildTarget: WebGL
+    m_Formats: 05000000
   playModeTestRunnerEnabled: 0
   runPlayModeTestAsEditModeTest: 0
   actionOnDotNetUnhandledException: 1
@@ -805,7 +827,7 @@ PlayerSettings:
   webGLDebugSymbols: 0
   webGLEmscriptenArgs: 
   webGLModulesDirectory: 
-  webGLTemplate: APPLICATION:Default
+  webGLTemplate: APPLICATION:PWA
   webGLAnalyzeBuildSize: 0
   webGLUseEmbeddedResources: 0
   webGLCompressionFormat: 0
@@ -825,7 +847,8 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    WebGL: 
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
@@ -847,7 +870,7 @@ PlayerSettings:
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
   metroPackageName: Cromorphy
-  metroPackageVersion: 
+  metroPackageVersion: 1.0.0.0
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
@@ -855,7 +878,7 @@ PlayerSettings:
   metroCertificateNotAfter: 0000000000000000
   metroApplicationDescription: Cromorphy
   wsaImages: {}
-  metroTileShortName: 
+  metroTileShortName: Cromorphy
   metroTileShowName: 0
   metroMediumTileShowName: 0
   metroLargeTileShowName: 0
