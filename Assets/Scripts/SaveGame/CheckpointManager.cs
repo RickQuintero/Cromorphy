@@ -1,25 +1,13 @@
 using UnityEngine;
 
-/// <summary>
-/// Singleton de escena que lleva el registro del checkpoint activo.
-/// El PauseMenuManager lo consulta para saber si debe mostrar el botón de guardar.
-/// </summary>
 public class CheckpointManager : MonoBehaviour
 {
     public static CheckpointManager Instance { get; private set; }
 
-    // ── Estado ────────────────────────────────────────────────────────────────
-    /// <summary>Índice del último checkpoint alcanzado. -1 = ninguno.</summary>
-    public int LastCheckpointIndex { get; private set; } = -1;
-
-    /// <summary>Posición del último checkpoint alcanzado.</summary>
+    public int     LastCheckpointIndex    { get; private set; } = -1;
     public Vector3 LastCheckpointPosition { get; private set; }
+    public bool    CanSave => LastCheckpointIndex >= 0;
 
-    /// <summary>True si el jugador está en un checkpoint y puede guardar.</summary>
-    public bool CanSave => LastCheckpointIndex >= 0;
-
-    // ── Evento ────────────────────────────────────────────────────────────────
-    /// <summary>Se dispara cada vez que se registra un nuevo checkpoint.</summary>
     public event System.Action OnCheckpointReached;
 
     private void Awake()
@@ -28,22 +16,18 @@ public class CheckpointManager : MonoBehaviour
         Instance = this;
     }
 
-    /// <summary>Llamado por CheckpointZone cuando el jugador entra al trigger.</summary>
     public void RegisterCheckpoint(CheckpointZone zone)
     {
-        if (zone.checkpointIndex <= LastCheckpointIndex) return; // no retroceder
+        if (zone.checkpointIndex <= LastCheckpointIndex) return;
 
         LastCheckpointIndex    = zone.checkpointIndex;
         LastCheckpointPosition = zone.transform.position;
 
         OnCheckpointReached?.Invoke();
-        Debug.Log($"[CheckpointManager] Checkpoint activo → {LastCheckpointIndex}");
+        Debug.Log($"[CheckpointManager] Active checkpoint → {LastCheckpointIndex}");
     }
 
-    /// <summary>
-    /// Restaura el estado desde un SaveData al cargar partida.
-    /// Llama esto antes de mover al jugador a la posición guardada.
-    /// </summary>
+    // Call this after loading a save, before moving the player to the saved position.
     public void RestoreFromSave(SaveSystem.SaveData data)
     {
         LastCheckpointIndex    = data.checkpointIndex;

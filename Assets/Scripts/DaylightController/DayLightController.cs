@@ -52,6 +52,14 @@ public class DayLightController : MonoBehaviour
     public bool IsDay => isDay;
     public bool IsTransitioning => isTransitioning;
 
+    public void SetDayNightImmediate(bool day)
+    {
+        isDay = day;
+        ApplyColor(isDay ? dayColor : nightColor);
+        if (isDay) skyController?.SetDay();
+        else        skyController?.SetNight();
+    }
+
     public void TriggerCycle()
     {
         if (isTransitioning) return;

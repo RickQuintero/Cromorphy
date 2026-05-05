@@ -1,87 +1,70 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.InputSystem; // Utilizado para la consulta nativa (directa) del hardware.
+using UnityEngine.InputSystem;
 
 public class PauseMenuManager : MonoBehaviour
 {
-    [Header("Referencias UI")]
-    [Tooltip("El objeto Panel (hijo del Canvas) que contiene la interfaz de tu pausa.")]
+    [Header("UI References")]
+    [Tooltip("Panel that contains the pause UI.")]
     public GameObject pausePanel;
 
-    [Tooltip("Botón de guardar partida. Se activa solo cuando hay un checkpoint alcanzado.")]
+    [Tooltip("Save button. Shown only when a checkpoint has been reached.")]
     public GameObject saveButton;
 
-    [Tooltip("Panel de slots de guardado (hijo del pausePanel).")]
+    [Tooltip("Save slots panel (child of pausePanel).")]
     public GameObject saveGamePanel;
 
-    [Header("Escenas")]
-    [Tooltip("El nombre exacto de la escena de menú principal.")]
+    [Header("Scenes")]
+    [Tooltip("Exact name of the main menu scene.")]
     public string mainMenuSceneName = "MainMenu";
 
-    private bool _isPaused = false;
+    private bool _isPaused;
+    private bool _subscribedToCheckpoint;
 
     private void Start()
     {
-        // Al arrancar o cargar la zona, aseguramos que el juego no inicie congelado.
         Time.timeScale = 1f;
-        
-        if (pausePanel != null)
-            pausePanel.SetActive(false);
 
-        if (saveGamePanel != null)
-            saveGamePanel.SetActive(false);
+        if (pausePanel    != null) pausePanel.SetActive(false);
+        if (saveGamePanel != null) saveGamePanel.SetActive(false);
+        if (saveButton    != null) saveButton.SetActive(false);
 
-        // El botón de guardar empieza oculto; se muestra al llegar a un checkpoint
-        if (saveButton != null)
-            saveButton.SetActive(false);
-
-        // Suscribirse al evento de checkpoint
-        // Usamos Update como fallback por si CheckpointManager aún no existe en Start()
         if (CheckpointManager.Instance != null)
-            CheckpointManager.Instance.OnCheckpointReached += OnCheckpointReached;
+        {
+            CheckpointManager.Instance.OnCheckpointReached += RefreshSaveButton;
+            _subscribedToCheckpoint = true;
+        }
 
-        // Si ya había un checkpoint activo al cargar (partida cargada), mostrar el botón
         RefreshSaveButton();
     }
 
     private void OnDestroy()
     {
         if (CheckpointManager.Instance != null)
-            CheckpointManager.Instance.OnCheckpointReached -= OnCheckpointReached;
+            CheckpointManager.Instance.OnCheckpointReached -= RefreshSaveButton;
     }
 
-    private void OnCheckpointReached()
+    private void Update()
     {
-        RefreshSaveButton();
+        // Deferred subscription in case CheckpointManager initialises after this component.
+        if (!_subscribedToCheckpoint && CheckpointManager.Instance != null)
+        {
+            CheckpointManager.Instance.OnCheckpointReached += RefreshSaveButton;
+            _subscribedToCheckpoint = true;
+            RefreshSaveButton();
+        }
+
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            if (_isPaused) ContinueGame();
+            else           PauseGame();
+        }
     }
 
     private void RefreshSaveButton()
     {
         if (saveButton == null) return;
-        bool canSave = CheckpointManager.Instance != null && CheckpointManager.Instance.CanSave;
-        saveButton.SetActive(canSave);
-    }
-
-    private bool _subscribedToCheckpoint = false;
-
-    private void Update()
-    {
-        // Suscripción diferida por si CheckpointManager se inicializa después del PauseMenuManager
-        if (!_subscribedToCheckpoint && CheckpointManager.Instance != null)
-        {
-            CheckpointManager.Instance.OnCheckpointReached += OnCheckpointReached;
-            _subscribedToCheckpoint = true;
-            RefreshSaveButton(); // por si ya había checkpoint activo
-        }
-
-        // Consultamos la tecla Esc sin la necesidad imperativa de un asset InputAction intermedio 
-        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            if (_isPaused)
-                ContinueGame();
-            else
-                PauseGame();
-        }
+        saveButton.SetActive(CheckpointManager.Instance != null && CheckpointManager.Instance.CanSave);
     }
 
     public void PauseGame()
@@ -90,53 +73,32 @@ public class PauseMenuManager : MonoBehaviour
 
         _isPaused = true;
         pausePanel.SetActive(true);
-
-        // Actualizar visibilidad del botón guardar según checkpoint activo
-        if (saveButton != null)
-            saveButton.SetActive(CheckpointManager.Instance != null && CheckpointManager.Instance.CanSave);
-        
-        // Literalmente paraliza el motor de físicas de Unity y los renders basados en tiempo.
+        RefreshSaveButton();
         Time.timeScale = 0f;
     }
 
     public void ContinueGame()
     {
         _isPaused = false;
-
-        if (saveGamePanel != null)
-            saveGamePanel.SetActive(false);
-        
-        if (pausePanel != null)
-            pausePanel.SetActive(false);
-
-        // Restaura la velocidad de las físicas
+        if (saveGamePanel != null) saveGamePanel.SetActive(false);
+        if (pausePanel    != null) pausePanel.SetActive(false);
         Time.timeScale = 1f;
     }
 
-    /// <summary>Abre el panel de slots de guardado desde el botón del menú de pausa.</summary>
     public void OpenSavePanel()
     {
-        if (saveGamePanel != null)
-            saveGamePanel.SetActive(true);
+        if (saveGamePanel != null) saveGamePanel.SetActive(true);
     }
 
-    /// <summary>Cierra el panel de slots sin cerrar la pausa.</summary>
     public void CloseSavePanel()
     {
-        if (saveGamePanel != null)
-            saveGamePanel.SetActive(false);
+        if (saveGamePanel != null) saveGamePanel.SetActive(false);
     }
 
     public void ReturnToMainMenu()
     {
-        /* 
-           ¡IMPORTANTE!
-           Si no regresamos la escala del tiempo a 1 antes de saltar de escena, 
-           tu Menú Principal cargará con el tiempo paralizado y dará fallos gráficos.
-        */
+        // Must reset timescale before switching scenes or the menu loads frozen.
         Time.timeScale = 1f;
-        
-        Debug.Log("Volviendo desde Pausa al Main Menu...");
         SceneManager.LoadScene(mainMenuSceneName);
     }
 }

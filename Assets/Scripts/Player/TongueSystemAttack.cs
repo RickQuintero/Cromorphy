@@ -81,16 +81,17 @@ public class TongueSystemAttack : MonoBehaviour
     // ── Input ─────────────────────────────────────────────────────────────────
     void HandleInput()
     {
-        // Start charging on Aim press
-        if (_input.AimDown && _state == State.Idle)
+        // Start charging on Attack press
+        if (_input.AttackDown && _state == State.Idle)
         {
             _state       = State.Charging;
             _chargeTimer = 0f;
+            AudioManager.Instance.PlayEffect("TongueCharge");
             if (rangeIndicator != null) rangeIndicator.gameObject.SetActive(true);
         }
 
         // Release before full charge → cancel
-        if (_input.AimUp && _state == State.Charging)
+        if (_input.AttackUp && _state == State.Charging)
             ReturnToIdle();
     }
 

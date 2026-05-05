@@ -1,60 +1,68 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Coloca este script en un trigger (Collider2D o Collider con Is Trigger = true).
-/// Cuando el jugador entra, registra el checkpoint activo en CheckpointManager
-/// y muestra una animación/indicador visual opcional.
-/// </summary>
 public class CheckpointZone : MonoBehaviour
 {
-    [Header("Identificación")]
-    [Tooltip("Índice único de este checkpoint en la escena. Empieza en 0.")]
+    [Header("Identification")]
+    [Tooltip("Unique index for this checkpoint in the scene. Start at 0.")]
     public int checkpointIndex = 0;
 
-    [Tooltip("Tag del jugador.")]
+    [Tooltip("Tag used to identify the player.")]
     public string playerTag = "Player";
 
-    [Header("Visual (opcional)")]
-    [Tooltip("Objeto que se activa al alcanzar el checkpoint (ej: partícula, luz, bandera).")]
+    [Header("Visual (optional)")]
+    [Tooltip("Object activated when this checkpoint is reached (particle, flag, light, etc.)")]
     public GameObject activatedVisual;
 
-    private bool _activated = false;
+    private bool _activated;
 
     private void Start()
     {
-        // Si este checkpoint ya fue el último guardado, mostrarlo como activo
         if (CheckpointManager.Instance != null &&
             CheckpointManager.Instance.LastCheckpointIndex == checkpointIndex)
-        {
             SetActivated();
-        }
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        TryActivate(other.gameObject);
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        TryActivate(other.gameObject);
-    }
+    private void OnTriggerEnter(Collider other)     => TryActivate(other.gameObject);
+    private void OnTriggerEnter2D(Collider2D other) => TryActivate(other.gameObject);
+    private void OnTriggerExit2D(Collider2D other)  => TryAutoSave(other.gameObject);
 
     private void TryActivate(GameObject other)
     {
-        if (_activated) return;
-        if (!other.CompareTag(playerTag)) return;
+        if (_activated || !other.CompareTag(playerTag)) return;
 
         SetActivated();
         CheckpointManager.Instance?.RegisterCheckpoint(this);
+    }
 
-        Debug.Log($"[CheckpointZone] Checkpoint {checkpointIndex} alcanzado.");
+    private void TryAutoSave(GameObject other)
+    {
+        if (!other.CompareTag(playerTag)) return;
+        if (CheckpointManager.Instance?.LastCheckpointIndex != checkpointIndex) return;
+
+        int slot = SaveSystem.GetActiveSlot();
+        if (slot < 0) return;
+
+        var data = new SaveSystem.SaveData
+        {
+            exists           = true,
+            checkpointIndex  = checkpointIndex,
+            sceneName        = SceneManager.GetActiveScene().name,
+            playerPosition   = transform.position,
+            isDay            = DayLightController.Instance?.IsDay ?? true,
+            numberOfCycles   = ScoreManager.Instance?.numberOfCycles ?? 0,
+            maxJumpLevel     = ScoreManager.Instance?.MaxJumpLevel ?? 1,
+            maxTongueRadius  = ScoreManager.Instance?.MaxTongueRadius ?? 3,
+            maxCamuflajeTime = ScoreManager.Instance?.MaxCamuflajeTime ?? 5,
+        };
+
+        SaveSystem.Save(slot, data);
+        Debug.Log($"[CheckpointZone] Auto-saved slot {slot} on exit — checkpoint {checkpointIndex}");
     }
 
     private void SetActivated()
     {
         _activated = true;
-        if (activatedVisual != null)
-            activatedVisual.SetActive(true);
+        if (activatedVisual != null) activatedVisual.SetActive(true);
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 
 public enum PlayerState { Normal, Water }
+public enum MovementState { Movement, Ragdoll }
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController2D : MonoBehaviour
@@ -104,6 +105,11 @@ public class PlayerController2D : MonoBehaviour
 
     public void SetGrassSpeedMultiplier(float multiplier) => _grassSpeedMultiplier = multiplier;
 
+    // ── Ragdoll ───────────────────────────────────────────────────────────
+    [Header("Ragdoll")]
+    [Tooltip("Force magnitude used to pull the player toward the killer's position when carried.")]
+    public float killerFollowForce = 20f;
+
     // ── Step Sound ────────────────────────────────────────────────────────
     [Header("Step Sound")]
     public AudioSource stepAudio;
@@ -113,7 +119,10 @@ public class PlayerController2D : MonoBehaviour
     private Rigidbody2D _rb;
     [SerializeField] private InputReader _input;
 
-    private PlayerState _state = PlayerState.Normal;
+    private PlayerState    _state         = PlayerState.Normal;
+    private MovementState  _movementState = MovementState.Movement;
+    private Transform      _killerTransform;
+    private Vector2        _killerOffset;
 
     private bool    _isGrounded;
     private Vector2 _groundNormal = Vector2.up;
@@ -156,6 +165,12 @@ public class PlayerController2D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (_movementState == MovementState.Ragdoll)
+        {
+            TickRagdollFollow();
+            return;
+        }
+
         Vector2 input = _input != null ? _input.MoveInput : Vector2.zero;
         UpdateGravity();
         ApplyMovement(input);
@@ -176,6 +191,8 @@ public class PlayerController2D : MonoBehaviour
 
     private void Update()
     {
+        if (_movementState == MovementState.Ragdoll) return;
+
         Vector2 input = _input != null ? _input.MoveInput : Vector2.zero;
 
         if (_input != null)
@@ -264,7 +281,7 @@ public class PlayerController2D : MonoBehaviour
         // Jump in the input direction; fall back to the surface normal when no input is held.
         Vector2 dir     = input.sqrMagnitude > 0.01f ? input.normalized : _groundNormal;
         Vector2 impulse = dir * jumpForce;
-
+        AudioManager.Instance.PlayEffect("JUMPSOUND");
         _rb.AddForce(impulse, ForceMode2D.Force);
 
         if (bodyRigidbodies != null)
@@ -477,6 +494,45 @@ public class PlayerController2D : MonoBehaviour
             _pendingSound = false;
             stepAudio.Play();
         }
+    }
+
+    // ── Ragdoll ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Switches the player into a physics-driven dead state.
+    /// killer == null → fall freely (spike death).
+    /// killer != null → loosely follow that transform (carried by predator).
+    /// </summary>
+    public void EnterRagdoll(Transform killer = null)
+    {
+        if (_movementState == MovementState.Ragdoll) return;
+        _movementState   = MovementState.Ragdoll;
+        _killerTransform = killer;
+
+        if (killer != null)
+            _killerOffset = (Vector2)transform.position - (Vector2)killer.position;
+
+        _rb.gravityScale   = 1f;
+        _rb.linearDamping  = 0f;
+        _rb.angularDamping = 0f;
+
+        if (bodyRigidbodies != null)
+            foreach (var rb in bodyRigidbodies)
+                if (rb != null)
+                {
+                    rb.gravityScale   = 1f;
+                    rb.linearDamping  = 0f;
+                    rb.angularDamping = 0f;
+                }
+
+        GameManager.Instance?.TriggerDeath();
+    }
+
+    private void TickRagdollFollow()
+    {
+        if (_killerTransform == null || !_killerTransform.gameObject.activeInHierarchy) return;
+        Vector2 target = (Vector2)_killerTransform.position + _killerOffset;
+        _rb.AddForce((target - _rb.position) * killerFollowForce, ForceMode2D.Force);
     }
 
     // ── Gizmos ────────────────────────────────────────────────────────────

@@ -1,59 +1,56 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using UnityEngine.SceneManagement;
+using TMPro;
 
-/// <summary>
-/// Panel de "Guardar Partida" que aparece desde el menú de pausa.
-/// Muestra los slots disponibles y permite sobrescribir o crear nueva partida.
-/// </summary>
 public class SaveGamePanel : MonoBehaviour
 {
     [System.Serializable]
     public class SlotUI
     {
-        public GameObject  root;
+        public GameObject      root;
         public TextMeshProUGUI labelText;
         public TextMeshProUGUI infoText;
-        public Button      saveButton;
-        public Button      deleteButton;
+        public Button          saveButton;
+        public Button          deleteButton;
     }
 
-    [Header("Slots (debe haber 10)")]
+    [Header("Slots")]
     public SlotUI[] slots;
 
-    [Header("Referencia al panel padre (para cerrarlo)")]
+    [Header("Panel")]
     public GameObject panelRoot;
 
-    [Header("Referencia al jugador (para guardar posición)")]
-    [Tooltip("Si se deja vacío, se busca automáticamente por tag 'Player'.")]
+    [Header("Player")]
+    [Tooltip("Leave empty to auto-find by 'Player' tag.")]
     public Transform playerTransform;
 
-    private void OnEnable()
+    private void Awake()
     {
         if (playerTransform == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) playerTransform = p.transform;
         }
-        RefreshSlots();
     }
 
-    // ── Refresca la UI ────────────────────────────────────────────────────────
+    private void OnEnable() => RefreshSlots();
+
     public void RefreshSlots()
     {
-        for (int i = 0; i < SaveSystem.MAX_SLOTS; i++)
+        int count = Mathf.Min(slots.Length, SaveSystem.MAX_SLOTS);
+        for (int i = 0; i < count; i++)
         {
-            if (i >= slots.Length) break;
-
             SlotUI ui   = slots[i];
             int    slot = i;
 
-            if (ui.labelText != null) ui.labelText.text = $"Ranura {i + 1}";
+            if (ui.labelText != null)
+                ui.labelText.text = $"Ranura {i + 1}";
 
-            if (SaveSystem.SlotExists(i))
+            SaveSystem.SaveData data = SaveSystem.Load(i);
+
+            if (data != null)
             {
-                SaveSystem.SaveData data = SaveSystem.Load(i);
                 if (ui.infoText != null)
                     ui.infoText.text = $"Checkpoint {data.checkpointIndex + 1}\n{data.timestamp}";
 
@@ -78,41 +75,31 @@ public class SaveGamePanel : MonoBehaviour
         }
     }
 
-    // ── Guardar en slot ───────────────────────────────────────────────────────
     private void SaveToSlot(int slot)
     {
         Vector3 pos = playerTransform != null
             ? playerTransform.position
-            : (CheckpointManager.Instance != null
-                ? CheckpointManager.Instance.LastCheckpointPosition
-                : Vector3.zero);
-
-        int checkpointIdx = CheckpointManager.Instance != null
-            ? CheckpointManager.Instance.LastCheckpointIndex
-            : 0;
+            : CheckpointManager.Instance?.LastCheckpointPosition ?? Vector3.zero;
 
         SaveSystem.SaveData data = new SaveSystem.SaveData
         {
-            exists           = true,
-            checkpointIndex  = checkpointIdx,
-            sceneName        = SceneManager.GetActiveScene().name,
-            playerPosition   = pos
+            exists          = true,
+            checkpointIndex = CheckpointManager.Instance?.LastCheckpointIndex ?? 0,
+            sceneName       = SceneManager.GetActiveScene().name,
+            playerPosition  = pos
         };
 
         SaveSystem.Save(slot, data);
+        SaveSystem.SetActiveSlot(slot);
         RefreshSlots();
-
-        Debug.Log($"[SaveGamePanel] Guardado en slot {slot}.");
     }
 
-    // ── Borrar slot ───────────────────────────────────────────────────────────
     private void DeleteSlot(int slot)
     {
         SaveSystem.DeleteSlot(slot);
         RefreshSlots();
     }
 
-    // ── Cerrar panel ──────────────────────────────────────────────────────────
     public void Close()
     {
         if (panelRoot != null) panelRoot.SetActive(false);

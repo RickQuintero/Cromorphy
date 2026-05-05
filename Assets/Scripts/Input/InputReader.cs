@@ -33,8 +33,7 @@ using UnityEngine.InputSystem;
         private const string ACTION_JUMP   = "Jump";
         private const string ACTION_CROUCH = "Crouch";
         private const string ACTION_ATTACK = "Attack";
-
-        private const string ACTION_AIM = "Interact";
+        private const string ACTION_Enter = "Enter";
 
         // ── Cached InputAction references ──────────────────────────────────────
         // Caching avoids dictionary lookup overhead on every ReadValue call.
@@ -42,8 +41,7 @@ using UnityEngine.InputSystem;
         private InputAction _jumpAction;
         private InputAction _crouchAction;
         private InputAction _attackAction;
-
-        private InputAction _aimAction;
+        private InputAction _EnterAction;
 
         // ── Polled values (public, read-only properties) ───────────────────────
 
@@ -71,14 +69,20 @@ using UnityEngine.InputSystem;
         /// <summary>True only in the frame attack was pressed.</summary>
         public bool AttackDown     { get; private set; }
 
-        /// <summary>True only in the frame aim (right-click) was pressed.</summary>
-        public bool AimDown        { get; private set; }
+        /// <summary>True while attack is held.</summary>
+        public bool AttackHeld     { get; private set; }
 
-        /// <summary>True while aim is held.</summary>
-        public bool AimHeld        { get; private set; }
+        /// <summary>True in the frame attack was released.</summary>
+        public bool AttackUp       { get; private set; }
 
-        /// <summary>True in the frame aim was released.</summary>
-        public bool AimUp          { get; private set; }
+        /// <summary>True only in the frame Enter/Interact was pressed.</summary>
+        public bool EnterDown      { get; private set; }
+
+        /// <summary>True while Enter/Interact is held.</summary>
+        public bool EnterHeld      { get; private set; }
+
+        /// <summary>True in the frame Enter/Interact was released.</summary>
+        public bool EnterUp        { get; private set; }
 
         // ── Raw direction helpers ──────────────────────────────────────────────
 
@@ -98,7 +102,7 @@ using UnityEngine.InputSystem;
             _jumpAction   = playerInput.actions[ACTION_JUMP];
             _crouchAction = playerInput.actions[ACTION_CROUCH];
             _attackAction = playerInput.actions[ACTION_ATTACK];
-            _aimAction    = playerInput.actions[ACTION_AIM];
+            _EnterAction    = playerInput.actions[ACTION_Enter];
         }
 
         private void Update()
@@ -115,9 +119,11 @@ using UnityEngine.InputSystem;
             CrouchHeld = _crouchAction.IsPressed();
             CrouchUp   = _crouchAction.WasReleasedThisFrame();
             AttackDown = _attackAction.WasPressedThisFrame();
-            AimDown    = _aimAction.WasPressedThisFrame();
-            AimHeld    = _aimAction.IsPressed();
-            AimUp      = _aimAction.WasReleasedThisFrame();
+            AttackHeld = _attackAction.IsPressed();
+            AttackUp   = _attackAction.WasReleasedThisFrame();
+            EnterDown  = _EnterAction.WasPressedThisFrame();
+            EnterHeld  = _EnterAction.IsPressed();
+            EnterUp    = _EnterAction.WasReleasedThisFrame();
         }
     }
 

@@ -18,6 +18,7 @@ public class HungryPointManager : MonoBehaviour
     public void AddPoint()
     {
         currentHungryPoints = Mathf.Min(currentHungryPoints + 1, maxHungryPoints);
+        AudioManager.Instance.PlayEffect("COLLECTABLE");
     }
 
     public void RemovePoint(int amount)

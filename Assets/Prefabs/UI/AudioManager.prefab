@@ -52,6 +52,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2dfd9e30585c5c54bb94edb0e6843daa, type: 2}
   effects:
   - {fileID: 11400000, guid: 2d9599de0e8bfbc4e81a8fd15ccb10b5, type: 2}
-  musicVolume: 0.3
+  - {fileID: 11400000, guid: 97f78e2344955014eb087f624773b83d, type: 2}
+  - {fileID: 11400000, guid: 0a5883069018cf14b87ce13900a7b7df, type: 2}
+  - {fileID: 11400000, guid: e38c5060c5be4a14a837b792b71c8646, type: 2}
+  musicVolume: 0.1
   voiceVolume: 0.4
   initialPoolSize: 10

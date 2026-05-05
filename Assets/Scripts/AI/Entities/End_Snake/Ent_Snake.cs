@@ -28,8 +28,8 @@ public class Ent_Snake : AIAgent
     public Rigidbody2D[] bodyRigidbodies;
 
     [Header("Prey Layers")]
+    [Tooltip("Include the Player layer here — IsPlayer is determined by component, not by layer.")]
     public LayerMask snakeFoodLayer;
-    public LayerMask playerLayer;
     public float detectionRayLength  = 5f;
     public float groundCheckDistance = 0.7f;
 
@@ -67,7 +67,6 @@ public class Ent_Snake : AIAgent
     private static readonly RaycastHit2D[] _hitBuffer = new RaycastHit2D[1];
     private ContactFilter2D _groundFilter;
     private ContactFilter2D _foodFilter;
-    private ContactFilter2D _playerFilter;
 
     // ── NavMesh ───────────────────────────────────────────────────────────
     private NavMeshAgent _agent;
@@ -100,7 +99,6 @@ public class Ent_Snake : AIAgent
 
         _groundFilter = new ContactFilter2D { useLayerMask = true, layerMask = solidLayer };
         _foodFilter   = new ContactFilter2D { useLayerMask = true, layerMask = snakeFoodLayer };
-        _playerFilter = new ContactFilter2D { useLayerMask = true, layerMask = playerLayer };
     }
 
     protected override void RegisterStates()
@@ -176,6 +174,27 @@ public class Ent_Snake : AIAgent
                 headTransform.localScale.y, 1f);
     }
 
+    // ── Direct contact kill ───────────────────────────────────────────────
+    // Handles the case where the player walks into the snake before the
+    // 8-dir raycasts detect them (e.g. from directly above/below).
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (((1 << other.gameObject.layer) & snakeFoodLayer) == 0) return;
+
+        var pc = other.GetComponent<PlayerController2D>()
+              ?? other.GetComponentInParent<PlayerController2D>();
+        if (pc == null) return;
+
+        pc.EnterRagdoll(transform);
+
+        if (StateMachine.CurrentStateID != AIStateID.Attack)
+        {
+            Target         = other.transform.root;
+            TargetIsPlayer = true;
+            StateMachine.SetState(AIStateID.Attack);
+        }
+    }
+
     // ── NavMesh helpers (called by states) ────────────────────────────────
 
     /// <summary>
@@ -241,27 +260,30 @@ public class Ent_Snake : AIAgent
         isPlayer = false;
 
         Vector2   origin     = headTransform != null ? (Vector2)headTransform.position : (Vector2)transform.position;
-        Transform mouseHit   = null;
+        Transform preyHit    = null;
         Transform playerHit  = null;
-        float     mouseDist  = float.MaxValue;
+        float     preyDist   = float.MaxValue;
         float     playerDist = float.MaxValue;
 
         foreach (Vector2 d in _rayDirs)
         {
-            if (Physics2D.Raycast(origin, d, _foodFilter, _hitBuffer, detectionRayLength) > 0)
-            {
-                RaycastHit2D mh = _hitBuffer[0];
-                if (mh.distance < mouseDist) { mouseHit = mh.transform; mouseDist = mh.distance; }
-            }
+            if (Physics2D.Raycast(origin, d, _foodFilter, _hitBuffer, detectionRayLength) == 0) continue;
 
-            if (Physics2D.Raycast(origin, d, _playerFilter, _hitBuffer, detectionRayLength) > 0)
+            RaycastHit2D hit    = _hitBuffer[0];
+            bool         hitIsPlayer = hit.transform.GetComponentInParent<PlayerController2D>() != null;
+
+            if (hitIsPlayer)
             {
-                RaycastHit2D ph = _hitBuffer[0];
-                if (ph.distance < playerDist) { playerHit = ph.transform; playerDist = ph.distance; }
+                if (hit.distance < playerDist) { playerHit = hit.transform; playerDist = hit.distance; }
+            }
+            else
+            {
+                if (hit.distance < preyDist)   { preyHit   = hit.transform; preyDist   = hit.distance; }
             }
         }
 
-        if (mouseHit  != null) { found = mouseHit;  isPlayer = false; return true; }
+        // Prefer prey over player (snake eats mice first)
+        if (preyHit   != null) { found = preyHit;   isPlayer = false; return true; }
         if (playerHit != null) { found = playerHit; isPlayer = true;  return true; }
         return false;
     }
@@ -287,9 +309,8 @@ public class Ent_Snake : AIAgent
         // Detection rays
         foreach (Vector2 d in _rayDirs)
         {
-            bool mh = Physics2D.Raycast(origin, d, detectionRayLength, snakeFoodLayer).collider != null;
-            bool ph = Physics2D.Raycast(origin, d, detectionRayLength, playerLayer).collider   != null;
-            Gizmos.color = mh ? Color.cyan : ph ? Color.red : new Color(1f, 0.3f, 0.3f, 0.15f);
+            bool hit = Physics2D.Raycast(origin, d, detectionRayLength, snakeFoodLayer).collider != null;
+            Gizmos.color = hit ? Color.cyan : new Color(1f, 0.3f, 0.3f, 0.15f);
             Gizmos.DrawLine(origin, origin + d * detectionRayLength);
         }
 
@@ -455,13 +476,11 @@ public class Ent_Snake : AIAgent
 
             if (s.TargetIsPlayer)
             {
-                Transform anchor = s.headTransform != null ? s.headTransform : s.transform;
-                s.Target.SetParent(anchor);
-                s.Target.GetComponent<PlayerTriggerStates>()?.TriggerDying(anchor);
+                s.Target.GetComponent<PlayerController2D>()?.EnterRagdoll(s.transform);
             }
             else
             {
-                s.Target.GetComponent<EntityPoolMember>()?.ReturnToPool();
+                //s.Target.GetComponent<EntityPoolMember>()?.ReturnToPool();
                 s.Target = null;
             }
         }
@@ -479,22 +498,35 @@ public class Ent_Snake : AIAgent
     {
         public override AIStateID ID => AIStateID.ReturnToNest;
 
+        private float   _travelTimer;
+        private Vector3 _returnPoint;   // nest position OR spawn position if no nest assigned
+
         public override void Enter(AIAgent a)
         {
-            var s = (Ent_Snake)a;
-            if (s.nestTransform != null)
-                s.SetDestination(s.nestTransform.position);
+            var s    = (Ent_Snake)a;
+            s.Target = null;
+            _travelTimer = 0f;
+
+            // If no nest is assigned, return to the spawn position recorded at OnSpawned.
+            _returnPoint = s.nestTransform != null
+                ? s.nestTransform.position
+                : s._wanderCenter;
+
+            s.SetDestination(_returnPoint);
         }
 
         public override void FixedTick(AIAgent a)
         {
             var s = (Ent_Snake)a;
 
-            if (s.nestTransform == null ||
-                Vector2.Distance(s.transform.position, s.nestTransform.position) <= s.nestArrivalRadius)
+            _travelTimer += Time.fixedDeltaTime;
+
+            // Guard: don't check arrival for the first 0.5 s so the snake can't
+            // despawn in the same frame it spawned at (or near) the return point.
+            if (_travelTimer >= 0.5f &&
+                Vector2.Distance(s.transform.position, _returnPoint) <= s.nestArrivalRadius)
             {
-                if (s.TargetIsPlayer && s.Target != null) { s.Target.SetParent(null); s.Target = null; }
-                s._agent.enabled = false;   // disable before pool returns object
+                s._agent.enabled = false;
                 s.Despawn();
                 return;
             }

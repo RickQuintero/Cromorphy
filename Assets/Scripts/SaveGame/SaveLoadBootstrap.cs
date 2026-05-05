@@ -1,41 +1,70 @@
 using UnityEngine;
 
-/// <summary>
-/// Coloca este script en la escena de juego (Zone_01, etc.).
-/// Al iniciar, detecta si hay una partida pendiente de cargar y
-/// reposiciona al jugador en el checkpoint guardado.
-/// </summary>
+// Runs after CheckpointManager (order 0) so Instance is ready, but before
+// CheckpointZone.Start() reads LastCheckpointIndex.
+[DefaultExecutionOrder(50)]
 public class SaveLoadBootstrap : MonoBehaviour
 {
-    [Tooltip("Si se deja vacío, se busca automáticamente por tag 'Player'.")]
-    public Transform playerTransform;
+    private SaveSystem.SaveData _loadedData;
 
-    private void Start()
+    private void Awake()
     {
-        if (playerTransform == null)
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) playerTransform = p.transform;
-        }
+        if (!PlayerPrefs.HasKey(SaveSystem.PENDING_LOAD_KEY)) return;
 
-        int pendingSlot = PlayerPrefs.GetInt("pending_load_slot", -1);
-        if (pendingSlot < 0) return; // nueva partida, sin carga
-
-        SaveSystem.SaveData data = SaveSystem.Load(pendingSlot);
-        if (data == null) return;
-
-        // Restaurar estado del checkpoint
-        if (CheckpointManager.Instance != null)
-            CheckpointManager.Instance.RestoreFromSave(data);
-
-        // Mover al jugador a la posición guardada
-        if (playerTransform != null)
-            playerTransform.position = data.playerPosition;
-
-        // Limpiar la clave para que no se vuelva a aplicar en reinicios
-        PlayerPrefs.DeleteKey("pending_load_slot");
+        int slot = PlayerPrefs.GetInt(SaveSystem.PENDING_LOAD_KEY);
+        PlayerPrefs.DeleteKey(SaveSystem.PENDING_LOAD_KEY);
         PlayerPrefs.Save();
 
-        Debug.Log($"[SaveLoadBootstrap] Partida cargada desde slot {pendingSlot} — checkpoint {data.checkpointIndex}");
+        SaveSystem.SaveData data = SaveSystem.Load(slot);
+        if (data == null) return;
+
+        SaveSystem.SetActiveSlot(slot);
+        CheckpointManager.Instance?.RestoreFromSave(data);
+        TeleportPlayer(data.playerPosition);
+        RestoreScore(data);
+
+        _loadedData = data;
+        Debug.Log($"[SaveLoadBootstrap] Loaded slot {slot} — checkpoint {data.checkpointIndex} at {data.playerPosition}");
+    }
+
+    // DayLightController.Start() (order 0) runs before this (order 50),
+    // so we can safely override the initial day/night state here.
+    private void Start()
+    {
+        if (_loadedData == null) return;
+        DayLightController.Instance?.SetDayNightImmediate(_loadedData.isDay);
+    }
+
+    private static void TeleportPlayer(Vector3 position)
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null) return;
+
+        player.transform.position = position;
+
+        var rb = player.GetComponent<Rigidbody2D>();
+        if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
+
+        var controller = player.GetComponent<PlayerController2D>();
+        if (controller?.bodyRigidbodies == null) return;
+
+        foreach (var body in controller.bodyRigidbodies)
+        {
+            if (body == null) continue;
+            body.position        = position;
+            body.linearVelocity  = Vector2.zero;
+            body.angularVelocity = 0f;
+        }
+    }
+
+    private static void RestoreScore(SaveSystem.SaveData data)
+    {
+        var score = ScoreManager.Instance;
+        if (score == null) return;
+
+        score.numberOfCycles   = data.numberOfCycles;
+        score.MaxJumpLevel     = data.maxJumpLevel;
+        score.MaxTongueRadius  = data.maxTongueRadius;
+        score.MaxCamuflajeTime = data.maxCamuflajeTime;
     }
 }
